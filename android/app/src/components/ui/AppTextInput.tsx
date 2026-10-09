@@ -17,8 +17,10 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import {FontAwesomeFreeSolid} from '@react-native-vector-icons/fontawesome-free-solid/static';
+import {faEye} from '@fortawesome/free-solid-svg-icons/faEye';
+import {faEyeSlash} from '@fortawesome/free-solid-svg-icons/faEyeSlash';
 
+import {AppIcon} from './AppIcon';
 import {colors} from '../../theme/colors';
 import {typography} from '../../theme/typography';
 import {useResponsive} from '../../hooks/useResponsive';
@@ -33,11 +35,13 @@ interface AppTextInputProps
   label?: string;
 
   required?: boolean;
+  disabled?: boolean;
 
   error?: string;
 
   leftIcon?: IconRenderer;
   rightIcon?: IconRenderer;
+  rightAction?: {label: string; onPress: () => void};
 
   password?: boolean;
 
@@ -53,9 +57,11 @@ export const AppTextInput = forwardRef<
     {
       label,
       required = false,
+      disabled = false,
       error,
       leftIcon,
       rightIcon,
+      rightAction,
       password = false,
       containerStyle,
       inputStyle,
@@ -84,11 +90,25 @@ export const AppTextInput = forwardRef<
             onPress={() =>
               setPasswordVisible(current => !current)
             }>
-            <FontAwesomeFreeSolid
-              name={passwordVisible ? 'eye-slash' : 'eye'}
+            <AppIcon
+              icon={passwordVisible ? faEyeSlash : faEye}
               size={iconSize}
               color={colors.textSecondary}
             />
+          </Pressable>
+        );
+      }
+
+      if (rightAction && rightIcon) {
+        return (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={rightAction.label}
+            accessibilityState={{disabled}}
+            disabled={disabled}
+            hitSlop={r(10)}
+            onPress={rightAction.onPress}>
+            {rightIcon({color: colors.textSecondary, size: iconSize})}
           </Pressable>
         );
       }
@@ -141,6 +161,7 @@ export const AppTextInput = forwardRef<
           <TextInput
             ref={ref}
             {...textInputProps}
+            editable={!disabled && textInputProps.editable !== false}
             secureTextEntry={
               password && !passwordVisible
             }

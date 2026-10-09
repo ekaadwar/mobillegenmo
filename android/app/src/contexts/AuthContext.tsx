@@ -9,6 +9,8 @@ import React, {
 } from 'react';
 
 import {loginApi} from '../services/authService';
+import {configureApiClient} from '../services/apiClient';
+import {clearCarCache} from '../services/carService';
 
 import {
   clearAuthSession,
@@ -49,12 +51,25 @@ export function AuthProvider({
   const [isBootstrapping, setIsBootstrapping] =
     useState(true);
 
+  const handleUnauthorized = useCallback(async () => {
+    clearCarCache();
+    try {
+      await clearAuthSession();
+    } finally {
+      setSession(null);
+    }
+  }, []);
+
   useEffect(() => {
+    configureApiClient({
+      getAccessToken: async () =>
+        (await getAuthSession())?.accessToken ?? null,
+      onUnauthorized: handleUnauthorized,
+    });
+
     async function bootstrap() {
       try {
-        const savedSession =
-          await getAuthSession();
-
+        const savedSession = await getAuthSession();
         setSession(savedSession);
       } finally {
         setIsBootstrapping(false);
@@ -62,11 +77,12 @@ export function AuthProvider({
     }
 
     bootstrap();
-  }, []);
+  }, [handleUnauthorized]);
 
   const login = useCallback(
     async (payload: LoginRequest) => {
       const response = await loginApi(payload);
+      clearCarCache();
 
       const newSession: AuthSession = {
         accessToken: response.accessToken,
@@ -85,8 +101,12 @@ export function AuthProvider({
   );
 
   const logout = useCallback(async () => {
-    await clearAuthSession();
-    setSession(null);
+    clearCarCache();
+    try {
+      await clearAuthSession();
+    } finally {
+      setSession(null);
+    }
   }, []);
 
   const value = useMemo<AuthContextValue>(

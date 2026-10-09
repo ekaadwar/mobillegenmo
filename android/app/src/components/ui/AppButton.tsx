@@ -44,6 +44,7 @@ interface AppButtonProps {
 
   disabled?: boolean;
   loading?: boolean;
+  compact?: boolean;
 }
 
 interface VariantStyle {
@@ -189,6 +190,7 @@ export function AppButton({
   rightIcon,
   disabled = false,
   loading = false,
+  compact = false,
 }: AppButtonProps) {
   const {r} = useResponsive();
   const [hovered, setHovered] = useState(false);
@@ -231,7 +233,7 @@ export function AppButton({
           styles.button,
           {
             height: r(48),
-            paddingHorizontal: r(20),
+            paddingHorizontal: r(compact ? 8 : 20),
             borderRadius: r(8),
             backgroundColor: state.backgroundColor,
             borderColor: variantStyle.border,
@@ -245,7 +247,7 @@ export function AppButton({
         const iconSize = r(16);
 
         return (
-          <View style={[styles.content, {gap: r(10)}]}>
+          <View style={[styles.content, {gap: r(compact ? 4 : 10)}]}>
             {loading ? (
               <ActivityIndicator size="small" color={state.color} />
             ) : (
@@ -260,7 +262,7 @@ export function AppButton({
                     styles.text,
                     {
                       color: state.color,
-                      fontSize: r(14),
+                      fontSize: r(compact ? 12 : 14),
                     },
                   ]}>
                   {title}

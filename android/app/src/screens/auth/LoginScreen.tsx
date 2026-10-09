@@ -18,8 +18,11 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 
-import {FontAwesomeFreeSolid} from '@react-native-vector-icons/fontawesome-free-solid/static';
+import {faArrowRight} from '@fortawesome/free-solid-svg-icons/faArrowRight';
+import {faLock} from '@fortawesome/free-solid-svg-icons/faLock';
+import {faUser} from '@fortawesome/free-solid-svg-icons/faUser';
 
+import {AppIcon} from '../../components/ui/AppIcon';
 import {
   AppButton,
 } from '../../components/ui/AppButton';
@@ -213,11 +216,7 @@ export function LoginScreen() {
               passwordRef.current?.focus();
             }}
             leftIcon={({color, size}) => (
-              <FontAwesomeFreeSolid
-                name="user"
-                size={size}
-                color={color}
-              />
+              <AppIcon icon={faUser} size={size} color={color} />
             )}
           />
 
@@ -251,11 +250,7 @@ export function LoginScreen() {
             }}
             onSubmitEditing={handleLogin}
             leftIcon={({color, size}) => (
-              <FontAwesomeFreeSolid
-                name="lock"
-                size={size}
-                color={color}
-              />
+              <AppIcon icon={faLock} size={size} color={color} />
             )}
           />
 
@@ -285,11 +280,7 @@ export function LoginScreen() {
             loading={isSubmitting}
             onPress={handleLogin}
             rightIcon={({color, size}) => (
-              <FontAwesomeFreeSolid
-                name="arrow-right"
-                size={size}
-                color={color}
-              />
+              <AppIcon icon={faArrowRight} size={size} color={color} />
             )}
           />
         </View>

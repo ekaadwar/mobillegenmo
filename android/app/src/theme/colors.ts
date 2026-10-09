@@ -7,6 +7,9 @@ export const colors = {
 
   inputBackground: '#F7F7F7',
   inputBorder: '#8292AA',
+  imagePlaceholder: '#E9EDF3',
+  skeleton: '#DDE3EC',
+  modalOverlay: 'rgba(25,27,28,0.4)',
 
   required: '#D11149',
   error: '#D11149',

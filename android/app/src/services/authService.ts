@@ -1,4 +1,5 @@
 import {API_CONFIG} from '../config/api';
+import {ApiError} from './apiClient';
 
 import {
   AuthErrorResponse,
@@ -6,16 +7,7 @@ import {
   LoginResponse,
 } from '../types/auth';
 
-export class ApiError extends Error {
-  statusCode?: number;
-
-  constructor(message: string, statusCode?: number) {
-    super(message);
-
-    this.name = 'ApiError';
-    this.statusCode = statusCode;
-  }
-}
+export {ApiError};
 
 export async function loginApi(
   payload: LoginRequest,
@@ -55,8 +47,9 @@ export async function loginApi(
         data as AuthErrorResponse | null;
 
       throw new ApiError(
-        errorResponse?.message ??
-          'Terjadi kesalahan pada server.',
+        response.status === 401
+          ? 'Username atau password salah'
+          : errorResponse?.message ?? 'Terjadi kesalahan pada server.',
         response.status,
       );
     }
