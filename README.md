@@ -1,5 +1,26 @@
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
+## Catalog And Car Detail
+
+- `Katalog > Lihat Detail` opens the selected car using `GET /api/v1/cars/{id}`. The detail stack preserves the shared header and bottom tabs.
+- The gallery supports swiping through all photos and displays up to five nearby thumbnails. The highlighted image is selected initially, with the first image as fallback.
+- The star sends `PATCH /api/v1/car-images/{imageId}` without a body, following the supplied API contract. After success, the detail is fetched again and catalog caches are invalidated. Returning to the catalog preserves its search, year filter, and page while refreshing the images.
+- Edit photo, Edit Mobil, Brosur / QR, and Hapus Unit dari Katalog open the existing logout screen. They do not edit or delete a car or sign out automatically.
+- Missing values and images have fallbacks. `showroom_address` is used for the address, with compatibility for `showroom_location`. Tax validity is displayed as `MM/YYYY`.
+- Detail sections have a 20px gap. The hero uses the 358:198 aspect ratio; specification cards use a 4px grid gap and stack on narrow screens or with enlarged system text.
+- Specification SVGs from [assets/catalog_icon.zip](assets/catalog_icon.zip) are stored as XML in [assets/catalogIcons.json](assets/catalogIcons.json) and rendered by the existing `react-native-svg` dependency.
+
+## Validation
+
+```sh
+npx tsc --noEmit
+npm run lint
+npm test -- --runInBand
+npm test -- --runInBand --coverage --collectCoverageFrom='android/app/src/**/*.{ts,tsx}'
+```
+
+Jest and React Test Renderer cover reusable components, catalog/detail navigation, gallery interactions, responsive grid decisions, API contracts, cache refresh, request cancellation, filters, authentication, and secure session storage. Native safe-area and Keychain APIs are mocked; tests do not access the live backend. Device-level visual checks require an authenticated session and a reachable backend.
+
 # Getting Started
 
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.

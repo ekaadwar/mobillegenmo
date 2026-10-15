@@ -17,12 +17,14 @@ import {
 import {AppIcon} from '../ui/AppIcon';
 import {colors} from '../../theme/colors';
 import {useResponsive} from '../../hooks/useResponsive';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 export function AppHeader() {
   const {r} = useResponsive();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.header, {height: r(64), paddingHorizontal: r(12)}]}>
+    <View style={[styles.header, {height: r(64) + insets.top, paddingTop: 10 + insets.top, paddingHorizontal: r(12)}]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Menu"

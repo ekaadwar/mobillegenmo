@@ -39,7 +39,9 @@ function DeleteIcon({color, size}: {color: string; size: number}) {
 
 export function CarCard({car, onDetail, onEdit, onDelete}: CarCardProps) {
   const {r} = useResponsive();
-  const imageUrl = resolveImageUrl(car.images?.[0]?.url);
+  const imageUrl = resolveImageUrl(
+    (car.images.find(image => image.highlight === true) ?? car.images[0])?.url,
+  );
   const [imageFailed, setImageFailed] = useState(false);
   const badge = statusBadge(car.status);
 

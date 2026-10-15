@@ -4,6 +4,8 @@ import {
   carQueryKey,
   clearCarCache,
   getCars,
+  getCar,
+  updateCarImageHighlight,
   getCachedCars,
   resolveImageUrl,
 } from '../android/app/src/services/carService';
@@ -55,6 +57,41 @@ describe('car API and formatting', () => {
     expect(new Headers(request.headers).get('Authorization')).toBe('Bearer test-token');
   });
 
+  it('loads detail and normalizes missing fields and image highlights', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      id: 'car', fuel: 'Bensin', showroom_address: 'Jakarta',
+      images: [{id: 'image', url: '/uploads/car.jpg'}, null, {}],
+    }));
+    const car = await getCar('car');
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_CONFIG.baseUrl}/cars/car`);
+    expect(car).toMatchObject({fuel: 'Bensin', description: null, showroom_address: 'Jakarta', registration_number: null});
+    expect(car.images).toEqual([{id: 'image', url: '/uploads/car.jpg', highlight: false}]);
+  });
+
+  it('patches the selected image without a body and invalidates list caches', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({data: [], page: 1, perpage: 8, total: 0, totalPages: 0}));
+    await getCars({});
+    const image = {id: 'image', url: '/uploads/car.jpg', highlight: true};
+    fetchMock.mockResolvedValueOnce(jsonResponse(image));
+    await expect(updateCarImageHighlight('image')).resolves.toEqual(image);
+    expect(fetchMock.mock.calls[1][0]).toBe(`${API_CONFIG.baseUrl}/car-images/image`);
+    expect(fetchMock.mock.calls[1][1]).toMatchObject({method: 'PATCH'});
+    expect(fetchMock.mock.calls[1][1].body).toBeUndefined();
+    expect(getCachedCars({})).toBeUndefined();
+  });
+
+  it('preserves detail validation and image-not-found errors', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({message: 'Validation failed (uuid is expected)'}, 400));
+    await expect(getCar('invalid')).rejects.toMatchObject({statusCode: 400, message: 'Validation failed (uuid is expected)'});
+    fetchMock.mockResolvedValueOnce(jsonResponse({message: 'Gambar mobil tidak ditemukan'}, 404));
+    await expect(updateCarImageHighlight('missing')).rejects.toMatchObject({statusCode: 404, message: 'Gambar mobil tidak ditemukan'});
+  });
+
+  it.each([null, {}, {id: 42}])('rejects malformed detail responses: %p', async body => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(body));
+    await expect(getCar('car')).rejects.toThrow('Data mobil dari server tidak valid.');
+  });
+
   it('omits an empty search and caches responses by all active filters', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({
       data: [], page: 1, perpage: 8, total: 0, totalPages: 0,
@@ -89,6 +126,72 @@ describe('car API and formatting', () => {
       statusCode: 401,
     });
     expect(onUnauthorized).not.toHaveBeenCalled();
+  });
+
+  it('accepts a valid login and rejects a successful response without a token', async () => {
+    const payload = {username: 'admin', password: 'test-password'};
+    const response = {accessToken: 'token', tokenType: 'Bearer', expiresIn: 3600};
+    fetchMock.mockResolvedValueOnce(jsonResponse(response));
+    await expect(loginApi(payload)).resolves.toEqual(response);
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({method: 'POST', body: JSON.stringify(payload)});
+    fetchMock.mockResolvedValueOnce(jsonResponse({}));
+    await expect(loginApi(payload)).rejects.toThrow('Response login tidak memiliki access token.');
+    fetchMock.mockResolvedValueOnce(jsonResponse({message: 'Unavailable'}, 503));
+    await expect(loginApi(payload)).rejects.toThrow('Unavailable');
+  });
+
+  it.each([
+    ['protected API', () => apiRequest('cars')],
+    ['login API', () => loginApi({username: 'admin', password: 'test-password'})],
+  ] as const)('normalizes network failures for %s', async (_label, request) => {
+    fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    await expect(request()).rejects.toThrow('Tidak dapat terhubung ke server.');
+  });
+
+  it.each([
+    ['protected API', () => apiRequest('cars')],
+    ['login API', () => loginApi({username: 'admin', password: 'test-password'})],
+  ] as const)('aborts timed-out %s requests', async (_label, request) => {
+    jest.useFakeTimers();
+    fetchMock.mockImplementationOnce((_url: string, options: RequestInit) => new Promise((_resolve, reject) => {
+      options.signal?.addEventListener('abort', () => reject(Object.assign(new Error('Aborted'), {name: 'AbortError'})));
+    }));
+    try {
+      await Promise.all([
+        expect(request()).rejects.toThrow('Request timeout. Silakan coba kembali.'),
+        jest.advanceTimersByTimeAsync(API_CONFIG.timeout),
+      ]);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('rejects malformed list and highlight responses', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({data: []}));
+    await expect(getCars({})).rejects.toThrow('Data katalog dari server tidak valid.');
+    fetchMock.mockResolvedValueOnce(jsonResponse({id: 'image', url: '/uploads/car.jpg'}));
+    await expect(updateCarImageHighlight('image')).rejects.toThrow('Data gambar dari server tidak valid.');
+  });
+
+  it.each([
+    ['protected API', () => apiRequest('cars')],
+    ['login API', () => loginApi({username: 'admin', password: 'test-password'})],
+  ] as const)('handles non-JSON error responses from %s', async (_label, request) => {
+    fetchMock.mockResolvedValueOnce({ok: false, status: 502, json: async () => { throw new Error('Invalid JSON'); }});
+    await expect(request()).rejects.toMatchObject({statusCode: 502});
+  });
+
+  it.each([true, false])('propagates caller cancellation (already aborted: %s)', async alreadyAborted => {
+    const controller = new AbortController();
+    fetchMock.mockImplementationOnce((_url: string, options: RequestInit) => new Promise((_resolve, reject) => {
+      const abort = () => reject(Object.assign(new Error('Aborted'), {name: 'AbortError'}));
+      if (options.signal?.aborted) { abort(); } else { options.signal?.addEventListener('abort', abort); }
+    }));
+    if (alreadyAborted) { controller.abort(); }
+    const operation = apiRequest('cars', {signal: controller.signal});
+    await Promise.resolve();
+    controller.abort();
+    await expect(operation).rejects.toMatchObject({name: 'AbortError'});
   });
 
   it('resolves upload URLs against the backend origin and formats null-safe car values', () => {

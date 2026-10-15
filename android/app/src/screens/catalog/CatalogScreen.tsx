@@ -6,8 +6,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
-import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
 import {
   faMagnifyingGlass,
 } from '@fortawesome/free-solid-svg-icons/faMagnifyingGlass';
@@ -24,7 +24,7 @@ import {YearRangeFilter} from '../../components/cars/YearRangeFilter';
 import {useDebounce} from '../../hooks/useDebounce';
 import {useResponsive} from '../../hooks/useResponsive';
 import {Car, CarListParams, CarListResponse} from '../../types/car';
-import {AppTabParamList} from '../../navigation/types';
+import {CatalogStackParamList} from '../../navigation/types';
 import {getCachedCars, getCars} from '../../services/carService';
 import {ApiError} from '../../services/apiClient';
 import {colors} from '../../theme/colors';
@@ -41,7 +41,8 @@ function ClearIcon({color, size}: {color: string; size: number}) {
 }
 
 export function CatalogScreen() {
-  const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<CatalogStackParamList>>();
+  const isFocused = useIsFocused();
   const {r, contentWidth} = useResponsive();
   const listRef = useRef<FlatList<Car>>(null);
   const [searchInput, setSearchInput] = useState('');
@@ -56,7 +57,7 @@ export function CatalogScreen() {
 
   useEffect(() => {
     const searchIsPending = searchInput.trim() !== debouncedSearch;
-    if (searchIsPending) {
+    if (!isFocused || searchIsPending) {
       return;
     }
 
@@ -106,7 +107,7 @@ export function CatalogScreen() {
       active = false;
       controller.abort();
     };
-  }, [page, retryCount, searchInput, debouncedSearch, yearRange]);
+  }, [isFocused, page, retryCount, searchInput, debouncedSearch, yearRange]);
 
   const clearSearch = () => {
     const unfilteredParams: CarListParams = {
@@ -202,7 +203,7 @@ export function CatalogScreen() {
       keyExtractor={car => car.id}
       renderItem={({item}) => (
         <View style={[styles.contentColumn, {width: contentWidth}]}>
-          <CarCard car={item} onDetail={() => navigation.navigate('Dashboard')} />
+          <CarCard car={item} onDetail={car => navigation.navigate('CarDetail', {carId: car.id})} />
         </View>
       )}
       ListHeaderComponent={renderHeader()}

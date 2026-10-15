@@ -2,6 +2,7 @@ import React from 'react';
 
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createDrawerNavigator} from '@react-navigation/drawer';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {faCar} from '@fortawesome/free-solid-svg-icons/faCar';
 import {faGaugeHigh} from '@fortawesome/free-solid-svg-icons/faGaugeHigh';
 import {faPlus} from '@fortawesome/free-solid-svg-icons/faPlus';
@@ -10,14 +11,26 @@ import {faUser} from '@fortawesome/free-solid-svg-icons/faUser';
 
 import {WelcomeScreen} from '../screens/home/WelcomeScreen.tsx';
 import {CatalogScreen} from '../screens/catalog/CatalogScreen';
+import {CarDetailScreen} from '../screens/catalog/CarDetailScreen';
 import {AppHeader} from '../components/layout/AppHeader';
 import {AppIcon} from '../components/ui/AppIcon';
-import {AppDrawerParamList, AppTabParamList} from './types';
+import {AppDrawerParamList, AppTabParamList, CatalogStackParamList} from './types';
 import {colors} from '../theme/colors';
 import {typography} from '../theme/typography';
 
 const Tabs = createBottomTabNavigator<AppTabParamList>();
 const Drawer = createDrawerNavigator<AppDrawerParamList>();
+const CatalogStack = createNativeStackNavigator<CatalogStackParamList>();
+
+function CatalogNavigator() {
+  return (
+    <CatalogStack.Navigator screenOptions={{headerShown: false}}>
+      <CatalogStack.Screen name="CatalogList" component={CatalogScreen} />
+      <CatalogStack.Screen name="CarDetail" component={CarDetailScreen} />
+      <CatalogStack.Screen name="Logout" component={WelcomeScreen} />
+    </CatalogStack.Navigator>
+  );
+}
 
 function AuthenticatedHeader() {
   return <AppHeader />;
@@ -74,7 +87,7 @@ function AuthenticatedTabs() {
       />
       <Tabs.Screen
         name="Catalog"
-        component={CatalogScreen}
+        component={CatalogNavigator}
         options={{
           title: 'Katalog',
           tabBarLabel: 'Katalog',

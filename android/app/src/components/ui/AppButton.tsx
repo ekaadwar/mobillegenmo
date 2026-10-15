@@ -45,6 +45,9 @@ interface AppButtonProps {
   disabled?: boolean;
   loading?: boolean;
   compact?: boolean;
+  iconOnly?: boolean;
+  size?: 32 | 48;
+  responsive?: boolean;
 }
 
 interface VariantStyle {
@@ -191,8 +194,12 @@ export function AppButton({
   disabled = false,
   loading = false,
   compact = false,
+  iconOnly = false,
+  size = 48,
+  responsive = true,
 }: AppButtonProps) {
   const {r} = useResponsive();
+  const measure = responsive ? r : (value: number) => value;
   const [hovered, setHovered] = useState(false);
 
   const variantStyle = variants[variant];
@@ -221,6 +228,8 @@ export function AppButton({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={title}
+      hitSlop={iconOnly ? 6 : undefined}
       accessibilityState={{disabled: disabled || loading}}
       disabled={disabled || loading}
       onPress={onPress}
@@ -232,22 +241,27 @@ export function AppButton({
         return [
           styles.button,
           {
-            height: r(48),
-            paddingHorizontal: r(compact ? 8 : 20),
-            borderRadius: r(8),
+            minHeight: measure(48),
+            paddingVertical: measure(10),
+            paddingHorizontal: measure(compact ? 8 : 20),
+            borderRadius: measure(8),
             backgroundColor: state.backgroundColor,
             borderColor: variantStyle.border,
           },
           width === 'full' ? styles.full : styles.auto,
+          iconOnly && {
+            width: size, height: size, minHeight: size,
+            paddingHorizontal: 0, paddingVertical: 0, borderRadius: size / 2,
+          },
           (disabled || loading) && styles.disabled,
         ] as ViewStyle[];
       }}>
       {({pressed}) => {
         const state = getStateStyle(pressed);
-        const iconSize = r(16);
+        const iconSize = measure(16);
 
         return (
-          <View style={[styles.content, {gap: r(compact ? 4 : 10)}]}>
+          <View style={[styles.content, {gap: measure(compact ? 4 : 10)}]}>
             {loading ? (
               <ActivityIndicator size="small" color={state.color} />
             ) : (
@@ -257,16 +271,16 @@ export function AppButton({
                   size: iconSize,
                 })}
 
-                <Text
+                {!iconOnly && <Text
                   style={[
                     styles.text,
                     {
                       color: state.color,
-                      fontSize: r(compact ? 12 : 14),
+                      fontSize: measure(compact ? 12 : 14),
                     },
                   ]}>
                   {title}
-                </Text>
+                </Text>}
 
                 {rightIcon?.({
                   color: state.color,
@@ -298,12 +312,15 @@ const styles = StyleSheet.create({
 
   content: {
     flexDirection: 'row',
+    flexShrink: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   text: {
     fontFamily: typography.medium,
+    flexShrink: 1,
+    textAlign: 'center',
   },
 
   disabled: {

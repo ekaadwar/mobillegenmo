@@ -1,6 +1,7 @@
 export interface CarImage {
   id: string;
   url: string;
+  highlight?: boolean;
 }
 
 export interface Car {
@@ -16,6 +17,13 @@ export interface Car {
   mileage: number | null;
   validity_period: string | null;
   images: CarImage[];
+}
+
+export interface CarDetail extends Car {
+  fuel: string | null;
+  registration_number: string | null;
+  showroom_name: string | null;
+  showroom_address: string | null;
 }
 
 export interface CarListResponse {

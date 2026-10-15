@@ -1,6 +1,6 @@
 import {API_CONFIG} from '../config/api';
 import {apiRequest} from './apiClient';
-import {Car, CarListParams, CarListResponse} from '../types/car';
+import {Car, CarDetail, CarImage, CarListParams, CarListResponse} from '../types/car';
 
 const responseCache = new Map<string, CarListResponse>();
 
@@ -20,6 +20,57 @@ export function getCachedCars(params: CarListParams) {
 
 export function clearCarCache() {
   responseCache.clear();
+}
+
+function normalizeCar(record: unknown): Car {
+  if (!record || typeof record !== 'object' || !('id' in record) || typeof record.id !== 'string') {
+    throw new Error('Data mobil dari server tidak valid.');
+  }
+  const car = record as Partial<Car>;
+  return {
+    id: record.id,
+    name: typeof car.name === 'string' ? car.name : '',
+    manufacturer: typeof car.manufacturer === 'string' ? car.manufacturer : '',
+    year: typeof car.year === 'number' && Number.isFinite(car.year) ? car.year : Number.NaN,
+    price: typeof car.price === 'number' && Number.isFinite(car.price) ? car.price : Number.NaN,
+    description: typeof car.description === 'string' ? car.description : null,
+    status: typeof car.status === 'string' ? car.status : null,
+    color: typeof car.color === 'string' ? car.color : null,
+    transmission: typeof car.transmission === 'string' ? car.transmission : null,
+    mileage: typeof car.mileage === 'number' && Number.isFinite(car.mileage) ? car.mileage : null,
+    validity_period: typeof car.validity_period === 'string' ? car.validity_period : null,
+    images: Array.isArray(car.images)
+      ? car.images.filter(image => image && typeof image.id === 'string' && typeof image.url === 'string')
+        .map(image => ({id: image.id, url: image.url, highlight: image.highlight === true}))
+      : [],
+  };
+}
+
+export async function getCar(id: string, signal?: AbortSignal): Promise<CarDetail> {
+  const response = await apiRequest<unknown>(`cars/${encodeURIComponent(id)}`, {signal});
+  const car = normalizeCar(response);
+  const detail = response as Partial<CarDetail> & {showroom_location?: string};
+  return {
+    ...car,
+    fuel: typeof detail.fuel === 'string' ? detail.fuel : null,
+    registration_number: typeof detail.registration_number === 'string' ? detail.registration_number : null,
+    showroom_name: typeof detail.showroom_name === 'string' ? detail.showroom_name : null,
+    showroom_address: typeof detail.showroom_address === 'string'
+      ? detail.showroom_address
+      : typeof detail.showroom_location === 'string' ? detail.showroom_location : null,
+  };
+}
+
+export async function updateCarImageHighlight(id: string, signal?: AbortSignal): Promise<CarImage> {
+  const response = await apiRequest<Partial<CarImage>>(`car-images/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    signal,
+  });
+  clearCarCache();
+  if (!response || response.id !== id || typeof response.url !== 'string' || typeof response.highlight !== 'boolean') {
+    throw new Error('Data gambar dari server tidak valid.');
+  }
+  return {id: response.id, url: response.url, highlight: response.highlight};
 }
 
 export async function getCars(
@@ -52,29 +103,7 @@ export async function getCars(
     throw new Error('Data katalog dari server tidak valid.');
   }
 
-  const cars = response.data.map((record): Car => {
-    if (!record || typeof record !== 'object' || typeof record.id !== 'string') {
-      throw new Error('Data katalog dari server tidak valid.');
-    }
-
-    const car = record as Partial<Car>;
-    return {
-      id: record.id,
-      name: typeof car.name === 'string' ? car.name : '',
-      manufacturer: typeof car.manufacturer === 'string' ? car.manufacturer : '',
-      year: typeof car.year === 'number' && Number.isFinite(car.year) ? car.year : Number.NaN,
-      price: typeof car.price === 'number' && Number.isFinite(car.price) ? car.price : Number.NaN,
-      description: typeof car.description === 'string' ? car.description : null,
-      status: typeof car.status === 'string' ? car.status : null,
-      color: typeof car.color === 'string' ? car.color : null,
-      transmission: typeof car.transmission === 'string' ? car.transmission : null,
-      mileage: typeof car.mileage === 'number' && Number.isFinite(car.mileage) ? car.mileage : null,
-      validity_period: typeof car.validity_period === 'string' ? car.validity_period : null,
-      images: Array.isArray(car.images)
-        ? car.images.filter(image => image && typeof image.id === 'string' && typeof image.url === 'string')
-        : [],
-    };
-  });
+  const cars = response.data.map(normalizeCar);
   const normalized: CarListResponse = {...response, data: cars} as CarListResponse;
   responseCache.set(carQueryKey(params), normalized);
   return normalized;
