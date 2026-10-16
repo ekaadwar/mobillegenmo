@@ -203,7 +203,11 @@ export function CatalogScreen() {
       keyExtractor={car => car.id}
       renderItem={({item}) => (
         <View style={[styles.contentColumn, {width: contentWidth}]}>
-          <CarCard car={item} onDetail={car => navigation.navigate('CarDetail', {carId: car.id})} />
+          <CarCard
+            car={item}
+            onDetail={car => navigation.navigate('CarDetail', {carId: car.id})}
+            onEdit={car => navigation.navigate('CarForm', {carId: car.id, car, source: 'catalog'})}
+          />
         </View>
       )}
       ListHeaderComponent={renderHeader()}

@@ -1,10 +1,15 @@
+import {Car} from '../types/car';
+
 export type AuthStackParamList = {
   Login: undefined;
 };
 
+export type CarFormSource = 'catalog' | 'detail';
+
 export type CatalogStackParamList = {
   CatalogList: undefined;
-  CarDetail: {carId: string};
+  CarDetail: {carId: string; refreshKey?: number};
+  CarForm: {carId: string; car?: Car; source: CarFormSource};
   Logout: undefined;
 };
 

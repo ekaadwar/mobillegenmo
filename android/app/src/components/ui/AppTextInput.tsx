@@ -151,6 +151,7 @@ export const AppTextInput = forwardRef<
               paddingHorizontal: r(14),
               gap: r(12),
             },
+            textInputProps.multiline && [styles.multilineContainer, {paddingVertical: r(12)}],
             Boolean(error) && styles.errorBorder,
           ]}>
           {leftIcon?.({
@@ -172,6 +173,7 @@ export const AppTextInput = forwardRef<
               {
                 fontSize: r(14),
               },
+              textInputProps.multiline && [styles.multilineInput, {minHeight: r(140)}],
               inputStyle,
             ]}
           />
@@ -221,6 +223,14 @@ const styles = StyleSheet.create({
 
   errorBorder: {
     borderColor: colors.error,
+  },
+
+  multilineContainer: {
+    alignItems: 'flex-start',
+  },
+
+  multilineInput: {
+    textAlignVertical: 'top',
   },
 
   input: {

@@ -45,7 +45,8 @@ export async function apiRequest<T>(
     }
     const requestHeaders = new Headers(headers);
     requestHeaders.set('Accept', 'application/json');
-    if (requestOptions.body && !requestHeaders.has('Content-Type')) {
+    // Multipart bodies need the runtime to set the boundary itself.
+    if (requestOptions.body && !(requestOptions.body instanceof FormData) && !requestHeaders.has('Content-Type')) {
       requestHeaders.set('Content-Type', 'application/json');
     }
     if (token) {

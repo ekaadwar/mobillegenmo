@@ -12,6 +12,7 @@ import {faUser} from '@fortawesome/free-solid-svg-icons/faUser';
 import {WelcomeScreen} from '../screens/home/WelcomeScreen.tsx';
 import {CatalogScreen} from '../screens/catalog/CatalogScreen';
 import {CarDetailScreen} from '../screens/catalog/CarDetailScreen';
+import {CarFormScreen} from '../screens/catalog/CarFormScreen';
 import {AppHeader} from '../components/layout/AppHeader';
 import {AppIcon} from '../components/ui/AppIcon';
 import {AppDrawerParamList, AppTabParamList, CatalogStackParamList} from './types';
@@ -27,6 +28,7 @@ function CatalogNavigator() {
     <CatalogStack.Navigator screenOptions={{headerShown: false}}>
       <CatalogStack.Screen name="CatalogList" component={CatalogScreen} />
       <CatalogStack.Screen name="CarDetail" component={CarDetailScreen} />
+      <CatalogStack.Screen name="CarForm" component={CarFormScreen} />
       <CatalogStack.Screen name="Logout" component={WelcomeScreen} />
     </CatalogStack.Navigator>
   );

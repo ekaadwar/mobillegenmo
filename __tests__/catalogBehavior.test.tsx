@@ -114,6 +114,12 @@ describe('catalog screen and actions', () => {
     expect(mockNavigate).toHaveBeenCalledWith('CarDetail', {carId: fixture.id});
   });
 
+  it('opens the edit form with the selected card data', async () => {
+    await render();
+    act(() => renderer.root.findByType(CarCard).props.onEdit(fixture));
+    expect(mockNavigate).toHaveBeenCalledWith('CarForm', {carId: fixture.id, car: fixture, source: 'catalog'});
+  });
+
   it('uses cached responses and rechecks the cache when regaining focus', async () => {
     jest.mocked(getCachedCars).mockReturnValue(response);
     await render();

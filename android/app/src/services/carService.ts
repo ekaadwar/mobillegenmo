@@ -48,6 +48,20 @@ function normalizeCar(record: unknown): Car {
 
 export async function getCar(id: string, signal?: AbortSignal): Promise<CarDetail> {
   const response = await apiRequest<unknown>(`cars/${encodeURIComponent(id)}`, {signal});
+  return normalizeCarDetail(response);
+}
+
+export async function updateCar(id: string, body: FormData, signal?: AbortSignal): Promise<CarDetail> {
+  const response = await apiRequest<unknown>(`cars/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body,
+    signal,
+  });
+  clearCarCache();
+  return normalizeCarDetail(response);
+}
+
+function normalizeCarDetail(response: unknown): CarDetail {
   const car = normalizeCar(response);
   const detail = response as Partial<CarDetail> & {showroom_location?: string};
   return {

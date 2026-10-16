@@ -34,7 +34,7 @@ function DeleteIcon({color, size}: {color: string; size: number}) {
 }
 
 export function CarDetailScreen({route, navigation}: NativeStackScreenProps<CatalogStackParamList, 'CarDetail'>) {
-  const {carId} = route.params;
+  const {carId, refreshKey} = route.params;
   const {width, contentWidth, fontScale} = useResponsive();
   const [car, setCar] = useState<CarDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,7 +71,7 @@ export function CarDetailScreen({route, navigation}: NativeStackScreenProps<Cata
       highlightRequest.current?.abort();
       highlightRequest.current = null;
     };
-  }, [carId, retry]);
+  }, [carId, retry, refreshKey]);
 
   const changeHighlight = async (image: CarImage) => {
     if (highlightRequest.current) {
@@ -104,6 +104,7 @@ export function CarDetailScreen({route, navigation}: NativeStackScreenProps<Cata
   };
 
   const openLogout = () => navigation.navigate('Logout');
+  const openEdit = () => navigation.navigate('CarForm', {carId, car: car ?? undefined, source: 'detail'});
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent}>
@@ -118,7 +119,7 @@ export function CarDetailScreen({route, navigation}: NativeStackScreenProps<Cata
           <AppButton title="Coba Lagi" onPress={() => setRetry(value => value + 1)} responsive={false} />
         </View> : null}
         {car ? <>
-          <CarImageGallery key={car.id} images={car.images} name={car.name} updating={saving} onHighlight={changeHighlight} onEdit={openLogout} />
+          <CarImageGallery key={car.id} images={car.images} name={car.name} updating={saving} onHighlight={changeHighlight} onEdit={openEdit} />
           <AppCard>
             <AppBadge label={`${car.manufacturer || '-'} - ${Number.isFinite(car.year) ? car.year : '-'}`} variant="primary-outline" icon={<AppIcon icon={faCar} color={colors.primary} size={12} />} />
             <Text style={styles.name}>{car.name || 'Nama mobil tidak tersedia'}</Text>
@@ -144,7 +145,7 @@ export function CarDetailScreen({route, navigation}: NativeStackScreenProps<Cata
           <AppCard style={styles.actions}>
             <View style={styles.actionHeading}><AppIcon icon={faShieldHalved} size={16} color={colors.primary} /><Text style={styles.heading}>Aksi Kelola Unit</Text></View>
             <View style={[styles.actionRow, stackColumns && styles.stacked]}>
-              <View style={styles.action}><AppButton title="Edit Mobil" variant="warning" leftIcon={EditIcon} responsive={false} compact onPress={openLogout} /></View>
+              <View style={styles.action}><AppButton title="Edit Mobil" variant="warning" leftIcon={EditIcon} responsive={false} compact onPress={openEdit} /></View>
               <View style={styles.action}><AppButton title="Brosur / QR" variant="info-outline" leftIcon={QrIcon} responsive={false} compact onPress={openLogout} /></View>
             </View>
             <AppButton title="Hapus Unit dari Katalog" variant="danger-outline" leftIcon={DeleteIcon} responsive={false} onPress={openLogout} />

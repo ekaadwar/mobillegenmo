@@ -95,7 +95,19 @@ describe('car detail screen', () => {
     expect(renderer.root.findAllByType(CarImageGallery)).toHaveLength(1);
   });
 
-  it.each(['Edit foto mobil', 'Edit Mobil', 'Brosur / QR', 'Hapus Unit dari Katalog'])('routes %s to the logout screen', async label => {
+  it.each(['Edit foto mobil', 'Edit Mobil'])('opens the edit form from %s with the loaded detail', async label => {
+    await renderScreen();
+    await press(label);
+    expect(navigate).toHaveBeenCalledWith('CarForm', {carId: car.id, car, source: 'detail'});
+  });
+
+  it('reloads the detail when returning with a new refresh key', async () => {
+    await renderScreen();
+    await act(async () => { renderer.update(<CarDetailScreen {...props} route={{...props.route, params: {carId: car.id, refreshKey: 1}}} />); });
+    expect(getCarMock).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(['Brosur / QR', 'Hapus Unit dari Katalog'])('routes %s to the logout screen', async label => {
     await renderScreen();
     await press(label);
     expect(navigate).toHaveBeenCalledWith('Logout');
