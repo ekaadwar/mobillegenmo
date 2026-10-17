@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {faArrowLeft} from '@fortawesome/free-solid-svg-icons/faArrowLeft';
 import {faCalendarDays} from '@fortawesome/free-solid-svg-icons/faCalendarDays';
@@ -17,6 +18,7 @@ import {CatalogStackParamList} from '../../navigation/types';
 import {getCar, updateCar, updateCarImageHighlight} from '../../services/carService';
 import {CarImage} from '../../types/car';
 import {
+  buildCarImagesFormData,
   buildCarUpdateFormData,
   buildRemoveImagesFormData,
   CarFormErrors,
@@ -101,11 +103,13 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
   const [values, setValues] = useState<CarFormValues>(() => (initialCar ? carToFormValues(initialCar) : EMPTY_VALUES));
   const [images, setImages] = useState<CarImage[]>(initialCar?.images ?? []);
   const [ready, setReady] = useState(Boolean(initialCar));
+  const [loadingDetails, setLoadingDetails] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [errors, setErrors] = useState<CarFormErrors>({});
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const dirty = useRef(false);
   const changed = useRef(false);
@@ -114,6 +118,7 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
 
   useEffect(() => {
     const controller = new AbortController();
+    setLoadingDetails(true);
     setMessage(null);
     getCar(carId, controller.signal)
       .then(detail => {
@@ -136,6 +141,7 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
       })
       .finally(() => {
         if (!controller.signal.aborted) {
+          setLoadingDetails(false);
           setRefreshing(false);
         }
       });
@@ -173,6 +179,80 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
     if (!image.highlight) {
       setPending({type: 'highlight', image});
     }
+  };
+
+  const requestAddImages = () => {
+    const remaining = MAX_CAR_IMAGES - images.length;
+    if (mutation.current || pending || loadingDetails || remaining <= 0) {
+      return;
+    }
+    const controller = new AbortController();
+    mutation.current = controller;
+    setSubmitting(true);
+    setMessage(null);
+    let selected = false;
+
+    const finish = () => {
+      if (!controller.signal.aborted) {
+        mutation.current = null;
+        setSubmitting(false);
+        setUploading(false);
+      }
+    };
+
+    const addImages = async (sourceType: 'camera' | 'library') => {
+      selected = true;
+      if (controller.signal.aborted) {
+        return;
+      }
+      try {
+        const result = sourceType === 'camera'
+          ? await launchCamera({mediaType: 'photo', cameraType: 'back', saveToPhotos: false})
+          : await launchImageLibrary({mediaType: 'photo', selectionLimit: remaining});
+        if (controller.signal.aborted || result.didCancel) {
+          return;
+        }
+        if (result.errorCode) {
+          const pickerErrors = {
+            camera_unavailable: 'Kamera tidak tersedia pada perangkat ini.',
+            permission: 'Akses foto atau kamera ditolak. Periksa izin aplikasi di pengaturan perangkat.',
+            others: 'Foto gagal dibuka. Silakan coba lagi.',
+          };
+          throw new Error(pickerErrors[result.errorCode]);
+        }
+        const assets = result.assets ?? [];
+        if (assets.length === 0) {
+          return;
+        }
+        if (assets.length > remaining) {
+          throw new Error(`Maksimal ${MAX_CAR_IMAGES} foto per unit. Anda dapat menambahkan ${remaining} foto lagi.`);
+        }
+        const photos = assets.map((asset, index) => {
+          if (!asset.uri || !asset.type?.startsWith('image/')) {
+            throw new Error('File foto tidak valid. Silakan pilih gambar lain.');
+          }
+          return {uri: asset.uri, type: asset.type, name: asset.fileName || `unit-${Date.now()}-${index}`};
+        });
+        setUploading(true);
+        const updated = await updateCar(carId, buildCarImagesFormData(photos), controller.signal);
+        if (!controller.signal.aborted) {
+          changed.current = true;
+          setImages(updated.images);
+        }
+      } catch (error: unknown) {
+        if (!controller.signal.aborted) {
+          setMessage(error instanceof Error ? error.message : 'Foto gagal diunggah. Silakan coba lagi.');
+        }
+      } finally {
+        finish();
+      }
+    };
+
+    Alert.alert('Tambah Foto Unit', 'Pilih sumber foto', [
+      {text: 'Batal', style: 'cancel', onPress: finish},
+      {text: 'Kamera', onPress: () => addImages('camera')},
+      {text: 'Galeri', onPress: () => addImages('library')},
+    ], {cancelable: true, onDismiss: () => { if (!selected) { finish(); } }});
   };
 
   const confirm = async () => {
@@ -253,8 +333,12 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
+            enabled={!submitting}
             colors={[colors.primary]}
             onRefresh={() => {
+              if (mutation.current) {
+                return;
+              }
               setRefreshing(true);
               setReloadKey(key => key + 1);
             }}
@@ -296,8 +380,9 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
                   variant="warning"
                   leftIcon={CameraIcon}
                   responsive={false}
-                  disabled={submitting || images.length >= MAX_CAR_IMAGES}
-                  onPress={() => navigation.navigate('Logout')}
+                  loading={uploading}
+                  disabled={submitting || loadingDetails || refreshing || images.length >= MAX_CAR_IMAGES}
+                  onPress={requestAddImages}
                 />
               </View>
             </View>

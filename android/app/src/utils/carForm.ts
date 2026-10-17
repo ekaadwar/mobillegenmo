@@ -150,3 +150,9 @@ export function buildRemoveImagesFormData(imageIds: string[]): FormData {
   body.append('removeImageIds', JSON.stringify(imageIds));
   return body;
 }
+
+export function buildCarImagesFormData(images: {uri: string; name: string; type: string}[]): FormData {
+  const body = new FormData();
+  images.forEach(image => body.append('images', image));
+  return body;
+}

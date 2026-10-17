@@ -1,5 +1,6 @@
 import React from 'react';
-import {RefreshControl, ScrollView, StyleSheet, Text, TextInput} from 'react-native';
+import {Alert, RefreshControl, ScrollView, StyleSheet, Text, TextInput} from 'react-native';
+import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {CarFormScreen, formatFieldInput} from '../android/app/src/screens/catalog/CarFormScreen';
 import {CarImageCarousel, carouselLayout, loopSlides, resolveLoopIndex} from '../android/app/src/components/cars/CarImageCarousel';
@@ -12,6 +13,7 @@ import {configureApiClient} from '../android/app/src/services/apiClient';
 import {getCar, updateCar, updateCarImageHighlight} from '../android/app/src/services/carService';
 import {CarDetail} from '../android/app/src/types/car';
 import {
+  buildCarImagesFormData,
   buildCarUpdateFormData,
   buildRemoveImagesFormData,
   carToFormValues,
@@ -130,6 +132,20 @@ describe('car form utilities', () => {
     expect(formEntries(buildRemoveImagesFormData(['img-1']))).toEqual({removeImageIds: '["img-1"]'});
   });
 
+  it('builds image-only multipart parts using the Postman images field', () => {
+    const photos = [
+      {uri: 'file:///cache/camera.jpg', name: 'camera.jpg', type: 'image/jpeg'},
+      {uri: 'content://media/photos/2', name: 'unit.png', type: 'image/png'},
+    ];
+    const append = jest.spyOn(FormData.prototype, 'append');
+    try {
+      buildCarImagesFormData(photos);
+      expect(append.mock.calls).toEqual(photos.map(photo => ['images', photo]));
+    } finally {
+      append.mockRestore();
+    }
+  });
+
   it('formats screen input per field', () => {
     expect(formatFieldInput('year', '20225')).toBe('2022');
     expect(formatFieldInput('price', '235000')).toBe('235.000');
@@ -242,6 +258,10 @@ describe('CarFormScreen', () => {
   const getCarMock = jest.mocked(getCar);
   const updateCarMock = jest.mocked(updateCar);
   const highlightMock = jest.mocked(updateCarImageHighlight);
+  const cameraMock = jest.mocked(launchCamera);
+  const libraryMock = jest.mocked(launchImageLibrary);
+  const alertMock = jest.spyOn(Alert, 'alert');
+  const photo = {uri: 'file:///cache/unit.jpg', fileName: 'unit.jpg', type: 'image/jpeg'};
   const navigation = {goBack: jest.fn(), popTo: jest.fn(), navigate: jest.fn()};
 
   beforeEach(() => {
@@ -265,6 +285,170 @@ describe('CarFormScreen', () => {
   function modal() {
     return renderer.root.findByType(ConfirmationModal).props;
   }
+
+  async function choosePhotoSource(label: string) {
+    await press('Tambah Foto Unit');
+    const buttons = alertMock.mock.calls[alertMock.mock.calls.length - 1][2]!;
+    await act(async () => { await buttons.find(button => button.text === label)!.onPress!(); });
+  }
+
+  it.each(['Kamera', 'Galeri'])('uploads photos from native %s without saving draft fields', async sourceLabel => {
+    cameraMock.mockResolvedValue({assets: [photo]});
+    libraryMock.mockResolvedValue({assets: [photo]});
+    const updatedImages = [...car.images, {id: 'new-photo', url: 'https://example.com/new.jpg', highlight: false}];
+    updateCarMock.mockResolvedValue({...car, images: updatedImages});
+    await renderScreen();
+    await type('Nama Mobil', 'Draft belum disimpan');
+    const append = jest.spyOn(FormData.prototype, 'append');
+    try {
+      await choosePhotoSource(sourceLabel);
+      expect(append.mock.calls).toEqual([['images', {uri: photo.uri, name: photo.fileName, type: photo.type}]]);
+    } finally {
+      append.mockRestore();
+    }
+    if (sourceLabel === 'Kamera') {
+      expect(cameraMock).toHaveBeenCalledWith({mediaType: 'photo', cameraType: 'back', saveToPhotos: false});
+      expect(libraryMock).not.toHaveBeenCalled();
+    } else {
+      expect(libraryMock).toHaveBeenCalledWith({mediaType: 'photo', selectionLimit: 2});
+      expect(cameraMock).not.toHaveBeenCalled();
+    }
+    expect(updateCarMock).toHaveBeenCalledWith(car.id, expect.any(FormData), expect.any(AbortSignal));
+    expect(renderer.root.findByType(CarImageCarousel).props.images).toEqual(updatedImages);
+    expect(texts()).toContain('Foto Unit (4 dari 5)');
+    expect(input('Nama Mobil').props.value).toBe('Draft belum disimpan');
+    expect(navigation.navigate).not.toHaveBeenCalled();
+    expect(navigation.popTo).not.toHaveBeenCalled();
+    await press('Kembali ke Detail Katalog');
+    expect(navigation.popTo).toHaveBeenCalledWith('CarDetail', {carId: car.id, refreshKey: expect.any(Number)});
+  });
+
+  it('uploads multiple gallery photos and disables adding when all slots are filled', async () => {
+    const secondPhoto = {uri: 'content://media/photos/2', fileName: 'unit.png', type: 'image/png'};
+    libraryMock.mockResolvedValue({assets: [photo, secondPhoto]});
+    updateCarMock.mockResolvedValue({...car, images: [...car.images,
+      {id: 'new-1', url: 'https://example.com/new-1.jpg', highlight: false},
+      {id: 'new-2', url: 'https://example.com/new-2.png', highlight: false},
+    ]});
+    await renderScreen();
+    const append = jest.spyOn(FormData.prototype, 'append');
+    try {
+      await choosePhotoSource('Galeri');
+      expect(append.mock.calls).toEqual([photo, secondPhoto].map(asset => ['images', {
+        uri: asset.uri, name: asset.fileName, type: asset.type,
+      }]));
+    } finally {
+      append.mockRestore();
+    }
+    expect(texts()).toContain('Foto Unit (5 dari 5)');
+    expect(findPressable('Tambah Foto Unit').props.disabled).toBe(true);
+    await press('Tambah Foto Unit');
+    expect(alertMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('waits for the current image count before allowing photo selection', async () => {
+    let resolveCar!: (detail: CarDetail) => void;
+    getCarMock.mockReturnValue(new Promise(resolve => { resolveCar = resolve; }));
+    await renderScreen();
+    expect(findPressable('Tambah Foto Unit').props.disabled).toBe(true);
+    await press('Tambah Foto Unit');
+    expect(alertMock).not.toHaveBeenCalled();
+    await act(async () => { resolveCar({...car, images: [...car.images, {id: 'img-4', url: 'https://example.com/4.jpg'}]}); });
+    libraryMock.mockResolvedValue({didCancel: true});
+    await choosePhotoSource('Galeri');
+    expect(libraryMock).toHaveBeenCalledWith({mediaType: 'photo', selectionLimit: 1});
+  });
+
+  it('recovers when launching a native picker rejects', async () => {
+    cameraMock.mockRejectedValue(new Error('Kamera gagal dibuka'));
+    await renderScreen();
+    await choosePhotoSource('Kamera');
+    expect(texts()).toContain('Kamera gagal dibuka');
+    expect(updateCarMock).not.toHaveBeenCalled();
+    expect(findPressable('Tambah Foto Unit').props.disabled).toBe(false);
+  });
+
+  it('cancels or dismisses the source dialog without opening a picker', async () => {
+    await renderScreen();
+    await choosePhotoSource('Batal');
+    expect(input('Nama Mobil').props.disabled).toBe(false);
+    await press('Tambah Foto Unit');
+    act(() => alertMock.mock.calls[1][3]!.onDismiss!());
+    expect(input('Nama Mobil').props.disabled).toBe(false);
+    expect(cameraMock).not.toHaveBeenCalled();
+    expect(libraryMock).not.toHaveBeenCalled();
+    expect(updateCarMock).not.toHaveBeenCalled();
+  });
+
+  it.each([{didCancel: true}, {assets: []}])('does not upload when the picker returns %j', async result => {
+    libraryMock.mockResolvedValue(result);
+    await renderScreen();
+    await choosePhotoSource('Galeri');
+    expect(updateCarMock).not.toHaveBeenCalled();
+    expect(findPressable('Tambah Foto Unit').props.disabled).toBe(false);
+    expect(renderer.root.findByType(CarImageCarousel).props.images).toEqual(car.images);
+  });
+
+  it.each([
+    [{errorCode: 'camera_unavailable'}, 'Kamera tidak tersedia'],
+    [{errorCode: 'permission'}, 'Akses foto atau kamera ditolak'],
+    [{errorCode: 'others'}, 'Foto gagal dibuka'],
+    [{assets: [{type: 'image/jpeg'}]}, 'File foto tidak valid'],
+    [{assets: [{uri: 'file:///video.mp4', type: 'video/mp4'}]}, 'File foto tidak valid'],
+    [{assets: [photo, photo, photo]}, 'Anda dapat menambahkan 2 foto lagi'],
+  ] as const)('handles invalid picker results %# without uploading', async (result, message) => {
+    cameraMock.mockResolvedValue(result as Awaited<ReturnType<typeof launchCamera>>);
+    await renderScreen();
+    await choosePhotoSource('Kamera');
+    expect(texts()).toContain(message);
+    expect(updateCarMock).not.toHaveBeenCalled();
+    expect(findPressable('Tambah Foto Unit').props.disabled).toBe(false);
+  });
+
+  it('shows upload errors, preserves photos and drafts, and allows retry', async () => {
+    libraryMock.mockResolvedValue({assets: [photo]});
+    updateCarMock.mockRejectedValueOnce(new Error('Upload gagal'));
+    await renderScreen();
+    await type('Nama Mobil', 'Draft');
+    await choosePhotoSource('Galeri');
+    expect(texts()).toContain('Upload gagal');
+    expect(renderer.root.findByType(CarImageCarousel).props.images).toEqual(car.images);
+    expect(input('Nama Mobil').props.value).toBe('Draft');
+    expect(input('Nama Mobil').props.disabled).toBe(false);
+    updateCarMock.mockResolvedValue(car);
+    await choosePhotoSource('Galeri');
+    expect(updateCarMock).toHaveBeenCalledTimes(2);
+    expect(texts()).not.toContain('Upload gagal');
+  });
+
+  it('locks mutations and refresh while uploading and aborts on unmount', async () => {
+    cameraMock.mockResolvedValue({assets: [photo]});
+    updateCarMock.mockReturnValue(new Promise(() => {}));
+    await renderScreen();
+    await press('Tambah Foto Unit');
+    await act(async () => { alertMock.mock.calls[0][2]!.find(button => button.text === 'Kamera')!.onPress!(); });
+    expect(renderer.root.findAllByType(AppButton).find(node => node.props.title === 'Tambah Foto Unit')!.props.loading).toBe(true);
+    expect(findPressable('Simpan').props.disabled).toBe(true);
+    expect(renderer.root.findByType(CarImageCarousel).props.disabled).toBe(true);
+    await press('Tambah Foto Unit');
+    await act(async () => { renderer.root.findByType(RefreshControl).props.onRefresh(); });
+    expect(alertMock).toHaveBeenCalledTimes(1);
+    expect(getCarMock).toHaveBeenCalledTimes(1);
+    const signal = updateCarMock.mock.calls[0][2];
+    act(() => renderer.unmount());
+    expect(signal?.aborted).toBe(true);
+  });
+
+  it('ignores picker results after leaving the screen', async () => {
+    let resolvePicker!: (result: {assets: typeof photo[]}) => void;
+    libraryMock.mockReturnValue(new Promise(resolve => { resolvePicker = resolve; }));
+    await renderScreen();
+    await press('Tambah Foto Unit');
+    act(() => { alertMock.mock.calls[0][2]!.find(button => button.text === 'Galeri')!.onPress!(); });
+    act(() => renderer.unmount());
+    await act(async () => { resolvePicker({assets: [photo]}); });
+    expect(updateCarMock).not.toHaveBeenCalled();
+  });
 
   it.each([['catalog', 'Kembali ke Katalog'], ['detail', 'Kembali ke Detail Katalog']] as const)('labels the back button for %s', async (source, label) => {
     await renderScreen({source, car});

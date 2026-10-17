@@ -10,6 +10,15 @@ This is a new [**React Native**](https://reactnative.dev) project, bootstrapped 
 - Detail sections have a 20px gap. The hero uses the 358:198 aspect ratio; specification cards use a 4px grid gap and stack on narrow screens or with enlarged system text.
 - Specification SVGs from [assets/catalog_icon.zip](assets/catalog_icon.zip) are stored as XML in [assets/catalogIcons.json](assets/catalogIcons.json) and rendered by the existing `react-native-svg` dependency.
 
+## Car Form Photo Upload
+
+- `Tambah Foto Unit` opens a native source dialog with `Kamera`, `Galeri`, and `Batal`. Camera capture and gallery selection use `react-native-image-picker` and the platform's own UI.
+- Gallery selection is limited to the remaining slots out of five photos. The returned selection is also checked before upload for Android pickers that do not enforce the limit.
+- Selected photos upload immediately as multipart `PATCH /api/v1/cars/{id}` with repeated `images` file parts (URI, filename, MIME type), matching the Postman collection. Other form fields and `removeImageIds` are omitted; unsaved field edits and the existing highlight are preserved.
+- The carousel and count update from the API response. Cancellation makes no request; errors keep existing photos and allow another attempt. Uploads block other form mutations and refresh, and are aborted when leaving the screen.
+- Android uses app-private temporary camera files (`saveToPhotos: false`) and needs no camera or broad storage permission. Rebuild/reinstall the app after adding this native dependency (`npm run android`); Metro reload alone is insufficient. For iOS, run `bundle exec pod install` in `ios` before rebuilding; camera/photo usage descriptions are included.
+- Jest mocks the native picker. Verify camera capture, gallery selection, cancellation, and successful upload on a device with an authenticated session and a reachable API.
+
 ## Validation
 
 ```sh
