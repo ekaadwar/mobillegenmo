@@ -1,26 +1,23 @@
-import React, {useEffect, useState} from 'react';
-import {
-  Image,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import {
-  faCarSide,
-} from '@fortawesome/free-solid-svg-icons/faCarSide';
-import {faCircle} from '@fortawesome/free-solid-svg-icons/faCircle';
-import {faPen} from '@fortawesome/free-solid-svg-icons/faPen';
-import {faTrash} from '@fortawesome/free-solid-svg-icons/faTrash';
+import React, { useEffect, useState } from 'react';
+import { Image, StyleSheet, Text, View } from 'react-native';
+import { faCarSide } from '@fortawesome/free-solid-svg-icons/faCarSide';
+import { faCircle } from '@fortawesome/free-solid-svg-icons/faCircle';
+import { faPen } from '@fortawesome/free-solid-svg-icons/faPen';
+import { faTrash } from '@fortawesome/free-solid-svg-icons/faTrash';
 
-import {Car} from '../../types/car';
-import {AppBadge} from '../ui/AppBadge';
-import {AppButton} from '../ui/AppButton';
-import {AppIcon} from '../ui/AppIcon';
-import {resolveImageUrl} from '../../services/carService';
-import {formatMileage, formatRupiah, statusBadge} from '../../utils/carFormatting';
-import {colors} from '../../theme/colors';
-import {typography} from '../../theme/typography';
-import {useResponsive} from '../../hooks/useResponsive';
+import { Car } from '../../types/car';
+import { AppBadge } from '../ui/AppBadge';
+import { AppButton } from '../ui/AppButton';
+import { AppIcon } from '../ui/AppIcon';
+import { resolveImageUrl } from '../../services/carService';
+import {
+  formatMileage,
+  formatRupiah,
+  statusBadge,
+} from '../../utils/carFormatting';
+import { colors } from '../../theme/colors';
+import { typography } from '../../theme/typography';
+import { useResponsive } from '../../hooks/useResponsive';
 
 interface CarCardProps {
   car: Car;
@@ -29,16 +26,16 @@ interface CarCardProps {
   onDelete?: (car: Car) => void;
 }
 
-function EditIcon({color, size}: {color: string; size: number}) {
+function EditIcon({ color, size }: { color: string; size: number }) {
   return <AppIcon icon={faPen} size={size} color={color} />;
 }
 
-function DeleteIcon({color, size}: {color: string; size: number}) {
+function DeleteIcon({ color, size }: { color: string; size: number }) {
   return <AppIcon icon={faTrash} size={size} color={color} />;
 }
 
-export function CarCard({car, onDetail, onEdit, onDelete}: CarCardProps) {
-  const {r} = useResponsive();
+export function CarCard({ car, onDetail, onEdit, onDelete }: CarCardProps) {
+  const { r } = useResponsive();
   const imageUrl = resolveImageUrl(
     (car.images.find(image => image.highlight === true) ?? car.images[0])?.url,
   );
@@ -48,11 +45,11 @@ export function CarCard({car, onDetail, onEdit, onDelete}: CarCardProps) {
   useEffect(() => setImageFailed(false), [imageUrl]);
 
   return (
-    <View style={[styles.card, {borderRadius: r(12), marginBottom: r(16)}]}>
-      <View style={[styles.imageFrame, {height: r(198)}]}>
+    <View style={[styles.card, { borderRadius: r(12), marginBottom: r(16) }]}>
+      <View style={[styles.imageFrame, { height: r(198) }]}>
         {imageUrl && !imageFailed ? (
           <Image
-            source={{uri: imageUrl}}
+            source={{ uri: imageUrl }}
             resizeMode="contain"
             onError={() => setImageFailed(true)}
             style={StyleSheet.absoluteFill}
@@ -60,56 +57,67 @@ export function CarCard({car, onDetail, onEdit, onDelete}: CarCardProps) {
           />
         ) : (
           <View style={styles.imageFallback}>
-            <AppIcon icon={faCarSide} size={r(42)} color={colors.textSecondary} />
+            <AppIcon
+              icon={faCarSide}
+              size={r(42)}
+              color={colors.textSecondary}
+            />
           </View>
         )}
-        <View style={[styles.imageBadges, {padding: r(12)}]}>
-          <AppBadge label={car.manufacturer || 'Tidak diketahui'} variant="primary-outline" />
+        <View style={[styles.imageBadges, { padding: r(12) }]}>
+          <AppBadge
+            label={car.manufacturer || 'Tidak diketahui'}
+            variant="primary-outline"
+          />
           {badge ? (
             <AppBadge
               label={badge.label}
-              variant={car.status?.trim().toLowerCase() === 'ready' ? 'success' : 'neutral'}
+              variant={
+                car.status?.trim().toLowerCase() === 'ready'
+                  ? 'success'
+                  : 'neutral'
+              }
             />
           ) : null}
         </View>
       </View>
 
-      <View style={{padding: r(16)}}>
-        <Text style={[styles.name, {fontSize: r(15), marginBottom: r(10)}]}>
+      <View style={{ padding: r(16) }}>
+        <Text style={[styles.name, { fontSize: r(15), marginBottom: r(10) }]}>
           {car.name || 'Nama mobil tidak tersedia'}
         </Text>
         <View style={styles.detailsRow}>
           <View style={styles.metadata}>
-            <Text style={[styles.metadataText, {fontSize: r(10)}]}>
+            <Text style={[styles.metadataText, { fontSize: r(10) }]}>
               {Number.isFinite(car.year) ? car.year : '-'}
             </Text>
             <AppIcon icon={faCircle} size={r(5)} color={colors.neutralHover} />
-            <Text style={[styles.metadataText, {fontSize: r(10)}]}>
+            <Text style={[styles.metadataText, { fontSize: r(10) }]}>
               {car.transmission?.trim() || '-'}
             </Text>
             <AppIcon icon={faCircle} size={r(5)} color={colors.neutralHover} />
-            <Text style={[styles.metadataText, {fontSize: r(10)}]}>
+            <Text style={[styles.metadataText, { fontSize: r(10) }]}>
               {formatMileage(car.mileage)}
             </Text>
           </View>
-          <Text style={[styles.price, {fontSize: r(14)}]}>
+          <Text style={[styles.price, { fontSize: r(14) }]}>
             {formatRupiah(car.price)}
           </Text>
         </View>
 
-        <View style={[styles.buttons, {gap: r(8), marginTop: r(18)}]}>
+        <View style={[styles.buttons, { gap: r(8), marginTop: r(18) }]}>
           <View style={styles.detailButton}>
             <AppButton
               title="Lihat Detail"
-              variant="warning"
+              variant="primary"
               compact
               onPress={() => onDetail(car)}
             />
           </View>
           <View style={styles.editButton}>
             <AppButton
-              title="Edit"
-              variant="primary-outline"
+              title=""
+              variant="warning-outline"
               compact
               leftIcon={EditIcon}
               onPress={() => onEdit?.(car)}
@@ -117,7 +125,7 @@ export function CarCard({car, onDetail, onEdit, onDelete}: CarCardProps) {
           </View>
           <View style={styles.deleteButton}>
             <AppButton
-              title="Delete"
+              title=""
               variant="danger-outline"
               compact
               leftIcon={DeleteIcon}
@@ -136,7 +144,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     elevation: 3,
     shadowColor: colors.textPrimary,
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 5,
   },
@@ -192,7 +200,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  detailButton: {flex: 2.1},
-  editButton: {flex: 0.95},
-  deleteButton: {flex: 1},
+  detailButton: { flex: 2.1 },
+  editButton: { flex: 0.95 },
+  deleteButton: { flex: 1 },
 });
