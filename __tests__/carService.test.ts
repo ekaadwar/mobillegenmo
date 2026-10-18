@@ -3,6 +3,7 @@ import {apiRequest, configureApiClient} from '../android/app/src/services/apiCli
 import {
   carQueryKey,
   clearCarCache,
+  createCars,
   getCars,
   getCar,
   updateCarImageHighlight,
@@ -66,6 +67,36 @@ describe('car API and formatting', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_CONFIG.baseUrl}/cars/car`);
     expect(car).toMatchObject({fuel: 'Bensin', description: null, showroom_address: 'Jakarta', registration_number: null});
     expect(car.images).toEqual([{id: 'image', url: '/uploads/car.jpg', highlight: false}]);
+  });
+
+  it('creates cars with authenticated multipart POST and invalidates cached catalog data', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({data: [], page: 1, perpage: 8, total: 0, totalPages: 0}));
+    await getCars({});
+    fetchMock.mockResolvedValueOnce(jsonResponse([{id: 'created', images: [{id: 'photo', url: '/uploads/photo.jpg'}]}], 201));
+    const body = new FormData();
+    body.append('cars', JSON.stringify([{name: 'Avanza'}]));
+    const controller = new AbortController();
+    const result = await createCars(body, controller.signal);
+    const [url, request] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(url).toBe(`${API_CONFIG.baseUrl}/cars/bulk`);
+    expect(request).toMatchObject({method: 'POST', body, signal: expect.any(AbortSignal)});
+    expect(new Headers(request.headers).get('Content-Type')).toBeNull();
+    expect(new Headers(request.headers).get('Authorization')).toBe('Bearer test-token');
+    expect(result).toMatchObject([{id: 'created', fuel: null, images: [{id: 'photo', highlight: false}]}]);
+    expect(getCachedCars({})).toBeUndefined();
+  });
+
+  it.each([null, {}, [], [{id: 3}]])('rejects malformed bulk responses: %p', async response => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(response, 201));
+    await expect(createCars(new FormData())).rejects.toThrow('Data mobil dari server tidak valid.');
+  });
+
+  it('propagates bulk API failures without clearing the cached catalog', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({data: [], page: 1, perpage: 8, total: 0, totalPages: 0}));
+    const cached = await getCars({});
+    fetchMock.mockResolvedValueOnce(jsonResponse({message: 'Foto terlalu besar'}, 400));
+    await expect(createCars(new FormData())).rejects.toMatchObject({statusCode: 400, message: 'Foto terlalu besar'});
+    expect(getCachedCars({})).toBe(cached);
   });
 
   it('patches the selected image without a body and invalidates list caches', async () => {

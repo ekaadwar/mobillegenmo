@@ -10,7 +10,16 @@ This is a new [**React Native**](https://reactnative.dev) project, bootstrapped 
 - Detail sections have a 20px gap. The hero uses the 358:198 aspect ratio; specification cards use a 4px grid gap and stack on narrow screens or with enlarged system text.
 - Specification SVGs from [assets/catalog_icon.zip](assets/catalog_icon.zip) are stored as XML in [assets/catalogIcons.json](assets/catalogIcons.json) and rendered by the existing `react-native-svg` dependency.
 
-## Car Form Photo Upload
+## Add Car
+
+- The navbar plus (`Tambah`) opens `CarAddScreen`, using the same form, field validation, themed controls, and carousel as `CarFormScreen`.
+- Camera/gallery photos stay in the image picker's temporary device cache. The add form holds their URI, filename, and MIME type locally; selecting, removing, or choosing a highlight makes no API request. Up to five photos are allowed.
+- `Simpan` validates the required name, manufacturer, year, price, and status, then shows the centered confirmation: `Apakah Anda yakin akan melakukan penambahan data?`. Only `Ya` submits multipart `POST /api/v1/cars/bulk`, following `resources/Mobil Legend API.postman_collection.json`: `cars` is a JSON array containing one car and `images_0` contains its files. Optional empty values become JSON null; numbers and dates use API formats.
+- A selected highlight is applied with the image endpoint after successful creation. This relies on the bulk response preserving uploaded image order. If highlight fails, the created car is retained and another save retries only the highlight, never the POST.
+- Success clears the catalog cache and returns to its list. Failed creation keeps the draft for retry. Cancelling the confirmation preserves the draft; leaving the add tab discards it and cancels pending work. Temporary files remain in OS-managed cache, not the public gallery.
+- Custom confirmation dialogs are centered vertically and horizontally and dismiss the keyboard when opened. The native camera/gallery dialog retains Android's system layout.
+
+## Edit Car Photo Upload
 
 - `Tambah Foto Unit` opens a native source dialog with `Kamera`, `Galeri`, and `Batal`. Camera capture and gallery selection use `react-native-image-picker` and the platform's own UI.
 - Gallery selection is limited to the remaining slots out of five photos. The returned selection is also checked before upload for Android pickers that do not enforce the limit.

@@ -1,4 +1,5 @@
 import {Car} from '../types/car';
+import {NavigatorScreenParams} from '@react-navigation/native';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -15,7 +16,7 @@ export type CatalogStackParamList = {
 
 export type AppTabParamList = {
   Dashboard: undefined;
-  Catalog: undefined;
+  Catalog: NavigatorScreenParams<CatalogStackParamList> | undefined;
   AddCar: undefined;
   Controls: undefined;
   Account: undefined;

@@ -1,8 +1,9 @@
 import React from 'react';
-import {Alert, RefreshControl, ScrollView, StyleSheet, Text, TextInput} from 'react-native';
+import {Alert, Image, Keyboard, Modal, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {useIsFocused} from '@react-navigation/native';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {CarFormScreen, formatFieldInput} from '../android/app/src/screens/catalog/CarFormScreen';
+import {CarAddScreen, CarFormScreen, formatFieldInput} from '../android/app/src/screens/catalog/CarFormScreen';
 import {CarImageCarousel, carouselLayout, loopSlides, resolveLoopIndex} from '../android/app/src/components/cars/CarImageCarousel';
 import {CarStatusSelector} from '../android/app/src/components/cars/CarStatusSelector';
 import {ConfirmationModal} from '../android/app/src/components/ui/ConfirmationModal';
@@ -10,9 +11,10 @@ import {AppButton} from '../android/app/src/components/ui/AppButton';
 import {AppTextInput} from '../android/app/src/components/ui/AppTextInput';
 import {API_CONFIG} from '../android/app/src/config/api';
 import {configureApiClient} from '../android/app/src/services/apiClient';
-import {getCar, updateCar, updateCarImageHighlight} from '../android/app/src/services/carService';
+import {createCars, getCar, updateCar, updateCarImageHighlight} from '../android/app/src/services/carService';
 import {CarDetail} from '../android/app/src/types/car';
 import {
+  buildCarCreateFormData,
   buildCarImagesFormData,
   buildCarUpdateFormData,
   buildRemoveImagesFormData,
@@ -29,8 +31,14 @@ import {
 jest.mock('../android/app/src/services/carService', () => ({
   ...jest.requireActual('../android/app/src/services/carService'),
   getCar: jest.fn(),
+  createCars: jest.fn(),
   updateCar: jest.fn(),
   updateCarImageHighlight: jest.fn(),
+}));
+
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useIsFocused: jest.fn(() => true),
 }));
 
 const car: CarDetail = {
@@ -146,6 +154,37 @@ describe('car form utilities', () => {
     }
   });
 
+  it('builds a bulk create with typed JSON values and images_0 file parts', () => {
+    const photos = [
+      {uri: 'file:///cache/unit.jpg', name: 'unit.jpg', type: 'image/jpeg'},
+      {uri: 'file:///cache/interior.png', name: 'interior.png', type: 'image/png'},
+    ];
+    const append = jest.spyOn(FormData.prototype, 'append');
+    try {
+      const body = buildCarCreateFormData({...values, name: ' Avanza '}, photos);
+      expect(JSON.parse(formEntries(body).cars)).toEqual([{
+        name: 'Avanza', manufacturer: 'Toyota', year: 2022, price: 235000000, status: 'ready',
+        validity_period: '2027-08-01', mileage: 24150, transmission: 'Otomatis (CVT)', fuel: 'Bensin',
+        color: 'Silver Metallic', showroom_name: car.showroom_name, showroom_address: car.showroom_address,
+        description: car.description,
+      }]);
+      expect(append.mock.calls.slice(1)).toEqual(photos.map(photo => ['images_0', photo]));
+    } finally {
+      append.mockRestore();
+    }
+  });
+
+  it('uses JSON null for empty optional create fields and permits no photos', () => {
+    const body = buildCarCreateFormData({...values, status: '', validity_period: '', mileage: '',
+      transmission: ' ', fuel: '', color: '', showroom_name: '', showroom_address: '', description: '',
+    }, []);
+    expect(Object.keys(formEntries(body))).toEqual(['cars']);
+    expect(JSON.parse(formEntries(body).cars)[0]).toMatchObject({status: null, validity_period: null,
+      mileage: null, transmission: null, fuel: null, color: null, showroom_name: null, showroom_address: null, description: null,
+    });
+    expect(JSON.parse(formEntries(buildCarCreateFormData({...values, mileage: '0'}, [])).cars)[0].mileage).toBe(0);
+  });
+
   it('formats screen input per field', () => {
     expect(formatFieldInput('year', '20225')).toBe('2022');
     expect(formatFieldInput('price', '235000')).toBe('235.000');
@@ -208,6 +247,11 @@ describe('CarImageCarousel', () => {
     expect(handlers.onHighlight).toHaveBeenCalledWith(car.images[2]);
   });
 
+  it.each(['file:///cache/unit.jpg', 'content://media/photos/1'])('renders local photo URI %s without a server prefix', uri => {
+    renderCarousel([{...car.images[0], url: uri}]);
+    expect(renderer.root.findByType(Image).props.source).toEqual({uri});
+  });
+
   it('renders nothing without images and disables looping for a single image', () => {
     renderCarousel([car.images[0]]);
     expect(renderer.root.findByType(ScrollView).props.scrollEnabled).toBe(false);
@@ -230,6 +274,23 @@ describe('CarStatusSelector', () => {
 });
 
 describe('ConfirmationModal', () => {
+  it('centers its dialog with balanced margins and dismisses the keyboard when opened', () => {
+    const dismiss = jest.spyOn(Keyboard, 'dismiss');
+    const onCancel = jest.fn();
+    try {
+      act(() => { renderer = ReactTestRenderer.create(<ConfirmationModal visible message="Yakin?" confirmLabel="Ya" onConfirm={jest.fn()} onCancel={onCancel} />); });
+      const backdrop = renderer.root.findByType(Modal).findAllByType(View)[0];
+      expect(StyleSheet.flatten(backdrop.props.style)).toMatchObject({flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 24});
+      expect(dismiss).toHaveBeenCalledTimes(1);
+      act(() => renderer.root.findByType(Modal).props.onRequestClose());
+      expect(onCancel).toHaveBeenCalledTimes(1);
+      act(() => renderer.update(<ConfirmationModal visible loading message="Yakin?" confirmLabel="Ya" onConfirm={jest.fn()} onCancel={onCancel} />));
+      expect(renderer.root.findByType(Modal).props.onRequestClose).toBeUndefined();
+    } finally {
+      dismiss.mockRestore();
+    }
+  });
+
   it('renders the message and wires both actions', () => {
     const onConfirm = jest.fn();
     const onCancel = jest.fn();
@@ -251,6 +312,275 @@ describe('AppTextInput multiline', () => {
   it('top-aligns textarea content', () => {
     act(() => { renderer = ReactTestRenderer.create(<AppTextInput multiline value="" />); });
     expect(StyleSheet.flatten(renderer.root.findByType(TextInput).props.style).textAlignVertical).toBe('top');
+  });
+});
+
+describe('CarAddScreen', () => {
+  const navigation = {navigate: jest.fn()};
+  const createMock = jest.mocked(createCars);
+  const libraryMock = jest.mocked(launchImageLibrary);
+  const cameraMock = jest.mocked(launchCamera);
+  const highlightMock = jest.mocked(updateCarImageHighlight);
+  const alertMock = jest.spyOn(Alert, 'alert');
+  const photos = [
+    {uri: 'file:///cache/front.jpg', fileName: 'front.jpg', type: 'image/jpeg'},
+    {uri: 'file:///cache/interior.png', fileName: 'interior.png', type: 'image/png'},
+  ];
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    jest.mocked(useIsFocused).mockReturnValue(true);
+    createMock.mockResolvedValue([{...car, images: car.images.slice(0, 2).map(image => ({...image, highlight: false}))}]);
+    libraryMock.mockResolvedValue({assets: photos});
+    cameraMock.mockResolvedValue({assets: [photos[0]]});
+    highlightMock.mockResolvedValue({...car.images[1], highlight: true});
+  });
+
+  function screen() {
+    return <CarAddScreen {...{navigation} as unknown as React.ComponentProps<typeof CarAddScreen>} />;
+  }
+
+  async function renderAdd() {
+    await act(async () => { renderer = ReactTestRenderer.create(screen()); });
+  }
+
+  function input(label: string) {
+    return renderer.root.findAllByType(AppTextInput).find(node => node.props.label === label)!;
+  }
+
+  function modal() {
+    return renderer.root.findByType(ConfirmationModal).props;
+  }
+
+  async function confirm() {
+    await act(async () => { await modal().onConfirm(); });
+  }
+
+  async function fillRequired() {
+    await act(async () => {
+      for (const [label, value] of [['Nama Mobil', 'Avanza'], ['Pabrikan', 'Toyota'], ['Tahun', '2022'], ['Harga Mobil (Rp)', '235000000']]) {
+        input(label).props.onChangeText(value);
+      }
+      renderer.root.findByType(CarStatusSelector).props.onChange('ready');
+    });
+  }
+
+  async function chooseSource(label = 'Galeri') {
+    await press('Tambah Foto Unit');
+    const buttons = alertMock.mock.calls[alertMock.mock.calls.length - 1][2]!;
+    await act(async () => { await buttons.find(button => button.text === label)!.onPress!(); });
+  }
+
+  it('starts empty with shared fields, no fetch or refresh, and required-field validation', async () => {
+    await renderAdd();
+    expect(renderer.root.findAllByType(AppTextInput)).toHaveLength(12);
+    expect(renderer.root.findAllByType(AppTextInput).every(node => node.props.value === '')).toBe(true);
+    expect(input('Deskripsi Kendaraan').props.multiline).toBe(true);
+    expect(texts()).toContain('Foto Unit (0 dari 5)');
+    expect(renderer.root.findAllByType(CarImageCarousel)).toHaveLength(0);
+    expect(renderer.root.findAllByType(RefreshControl)).toHaveLength(0);
+    expect(getCar).not.toHaveBeenCalled();
+    await press('Simpan');
+    expect(input('Nama Mobil').props.error).toBeDefined();
+    expect(renderer.root.findByType(CarStatusSelector).props.error).toBeDefined();
+    expect(modal().visible).toBe(false);
+    expect(createMock).not.toHaveBeenCalled();
+  });
+
+  it.each(['Kamera', 'Galeri'])('stages %s photos locally without any endpoint call', async source => {
+    await renderAdd();
+    await chooseSource(source);
+    const expected = source === 'Kamera' ? photos.slice(0, 1) : photos;
+    expect(renderer.root.findByType(CarImageCarousel).props.images.map((image: {url: string}) => image.url)).toEqual(expected.map(photo => photo.uri));
+    expect(renderer.root.findAllByType(Image).every(node => node.props.source.uri.startsWith('file:///cache/'))).toBe(true);
+    expect(findPressable('Tambah Foto Unit').props.disabled).toBe(false);
+    expect(createMock).not.toHaveBeenCalled();
+    expect(updateCar).not.toHaveBeenCalled();
+    expect(highlightMock).not.toHaveBeenCalled();
+  });
+
+  it('posts staged photos and current fields only after confirming Simpan', async () => {
+    await renderAdd();
+    await fillRequired();
+    await chooseSource();
+    await press('Simpan');
+    expect(modal()).toMatchObject({visible: true, message: 'Apakah Anda yakin akan melakukan penambahan data?', confirmLabel: 'Ya'});
+    expect(createMock).not.toHaveBeenCalled();
+    const append = jest.spyOn(FormData.prototype, 'append');
+    try {
+      await confirm();
+      expect(append.mock.calls.slice(1)).toEqual(photos.map(photo => ['images_0', {uri: photo.uri, name: photo.fileName, type: photo.type}]));
+    } finally {
+      append.mockRestore();
+    }
+    expect(createMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(formEntries(createMock.mock.calls[0][0]).cars)).toMatchObject([{name: 'Avanza', year: 2022, price: 235000000, status: 'ready'}]);
+    expect(navigation.navigate).toHaveBeenCalledWith('Catalog', {screen: 'CatalogList'});
+    expect(highlightMock).not.toHaveBeenCalled();
+  });
+
+  it('allows creation without photos and clears the draft after success', async () => {
+    await renderAdd();
+    await fillRequired();
+    await press('Simpan');
+    await confirm();
+    expect(Object.keys(formEntries(createMock.mock.calls[0][0]))).toEqual(['cars']);
+    expect(input('Nama Mobil').props.value).toBe('');
+    expect(findPressable('Simpan').props.disabled).toBe(false);
+  });
+
+  it('cancels confirmation without losing the draft or submitting', async () => {
+    await renderAdd();
+    await fillRequired();
+    await chooseSource();
+    await press('Simpan');
+    act(() => modal().onCancel());
+    expect(modal().visible).toBe(false);
+    expect(input('Nama Mobil').props.value).toBe('Avanza');
+    expect(texts()).toContain('Foto Unit (2 dari 5)');
+    expect(createMock).not.toHaveBeenCalled();
+  });
+
+  it.each(['Batal', 'Kembali ke Daftar Mobil'])('discards local draft on %s and returns to catalog', async label => {
+    await renderAdd();
+    await fillRequired();
+    await chooseSource();
+    await press(label);
+    expect(navigation.navigate).toHaveBeenCalledWith('Catalog', {screen: 'CatalogList'});
+    expect(createMock).not.toHaveBeenCalled();
+    expect(input('Nama Mobil').props.value).toBe('');
+    expect(texts()).toContain('Foto Unit (0 dari 5)');
+  });
+
+  it('deletes staged photos after confirmation without calling the server', async () => {
+    await renderAdd();
+    await chooseSource();
+    await press('Hapus foto');
+    act(() => modal().onCancel());
+    expect(texts()).toContain('Foto Unit (2 dari 5)');
+    await press('Hapus foto');
+    await confirm();
+    expect(renderer.root.findByType(CarImageCarousel).props.images.map((image: {url: string}) => image.url)).toEqual([photos[1].uri]);
+    expect(updateCar).not.toHaveBeenCalled();
+    expect(createMock).not.toHaveBeenCalled();
+    await fillRequired();
+    await press('Simpan');
+    const append = jest.spyOn(FormData.prototype, 'append');
+    try {
+      await confirm();
+      expect(append.mock.calls.slice(1)).toEqual([['images_0', {uri: photos[1].uri, name: photos[1].fileName, type: photos[1].type}]]);
+    } finally {
+      append.mockRestore();
+    }
+  });
+
+  it('limits selection to available local slots and rejects an oversized result', async () => {
+    await renderAdd();
+    await chooseSource();
+    libraryMock.mockResolvedValueOnce({assets: Array.from({length: 4}, () => photos[0])});
+    await chooseSource();
+    expect(libraryMock).toHaveBeenLastCalledWith({mediaType: 'photo', selectionLimit: 3});
+    expect(texts()).toContain('Anda dapat menambahkan 3 foto lagi');
+    expect(texts()).toContain('Foto Unit (2 dari 5)');
+    libraryMock.mockResolvedValueOnce({assets: Array.from({length: 3}, () => photos[0])});
+    await chooseSource();
+    expect(texts()).toContain('Foto Unit (5 dari 5)');
+    expect(findPressable('Tambah Foto Unit').props.disabled).toBe(true);
+    expect(createMock).not.toHaveBeenCalled();
+  });
+
+  it('retains draft and photos after API failure and allows retry', async () => {
+    createMock.mockRejectedValueOnce(new Error('Gagal menambah mobil'));
+    await renderAdd();
+    await fillRequired();
+    await chooseSource();
+    await press('Simpan');
+    await confirm();
+    expect(texts()).toContain('Gagal menambah mobil');
+    expect(input('Nama Mobil').props).toMatchObject({value: 'Avanza', disabled: false});
+    expect(texts()).toContain('Foto Unit (2 dari 5)');
+    expect(navigation.navigate).not.toHaveBeenCalled();
+    await press('Simpan');
+    await confirm();
+    expect(createMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('saves local highlight only after creation and retries highlight without creating a duplicate', async () => {
+    highlightMock.mockRejectedValueOnce(new Error('Network error'));
+    await renderAdd();
+    await fillRequired();
+    await chooseSource();
+    const carousel = renderer.root.findByType(CarImageCarousel);
+    act(() => carousel.props.onHighlight(carousel.props.images[1]));
+    await confirm();
+    expect(highlightMock).not.toHaveBeenCalled();
+    expect(createMock).not.toHaveBeenCalled();
+    expect(renderer.root.findByType(CarImageCarousel).props.images[1].highlight).toBe(true);
+    await press('Simpan');
+    await confirm();
+    expect(createMock).toHaveBeenCalledTimes(1);
+    expect(highlightMock).toHaveBeenCalledWith('img-2', expect.any(AbortSignal));
+    expect(texts()).toContain('Mobil berhasil ditambahkan, tetapi highlight gagal disimpan');
+    expect(input('Nama Mobil').props.disabled).toBe(true);
+    expect(navigation.navigate).not.toHaveBeenCalled();
+    await press('Simpan');
+    await confirm();
+    expect(createMock).toHaveBeenCalledTimes(1);
+    expect(highlightMock).toHaveBeenCalledTimes(2);
+    expect(navigation.navigate).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not stage late picker results after leaving the add tab', async () => {
+    let resolvePicker!: (result: {assets: typeof photos}) => void;
+    libraryMock.mockReturnValue(new Promise(resolve => { resolvePicker = resolve; }));
+    await renderAdd();
+    await press('Tambah Foto Unit');
+    act(() => { alertMock.mock.calls[0][2]!.find(button => button.text === 'Galeri')!.onPress!(); });
+    jest.mocked(useIsFocused).mockReturnValue(false);
+    act(() => renderer.update(screen()));
+    await act(async () => { resolvePicker({assets: photos}); });
+    expect(createMock).not.toHaveBeenCalled();
+    expect(updateCar).not.toHaveBeenCalled();
+    jest.mocked(useIsFocused).mockReturnValue(true);
+    act(() => renderer.update(screen()));
+    expect(texts()).toContain('Foto Unit (0 dari 5)');
+  });
+
+  it('reports an incomplete photo response without recreating an already added car', async () => {
+    createMock.mockResolvedValue([{...car, images: []}]);
+    await renderAdd();
+    await fillRequired();
+    await chooseSource();
+    await press('Jadikan foto highlight');
+    await confirm();
+    await press('Simpan');
+    await confirm();
+    expect(texts()).toContain('Mobil berhasil ditambahkan, tetapi foto highlight tidak ditemukan');
+    expect(highlightMock).not.toHaveBeenCalled();
+    await press('Simpan');
+    await confirm();
+    expect(createMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('blocks duplicate submits and aborts a pending create when the add tab loses focus', async () => {
+    createMock.mockReturnValue(new Promise(() => {}));
+    await renderAdd();
+    await fillRequired();
+    await press('Simpan');
+    act(() => { modal().onConfirm(); });
+    expect(modal().loading).toBe(true);
+    expect(input('Nama Mobil').props.disabled).toBe(true);
+    act(() => { modal().onConfirm(); });
+    expect(createMock).toHaveBeenCalledTimes(1);
+    const signal = createMock.mock.calls[0][1];
+    jest.mocked(useIsFocused).mockReturnValue(false);
+    act(() => renderer.update(screen()));
+    expect(signal?.aborted).toBe(true);
+    expect(renderer.toJSON()).toBeNull();
+    jest.mocked(useIsFocused).mockReturnValue(true);
+    act(() => renderer.update(screen()));
+    expect(input('Nama Mobil').props.value).toBe('');
+    expect(findPressable('Simpan').props.disabled).toBe(false);
   });
 });
 

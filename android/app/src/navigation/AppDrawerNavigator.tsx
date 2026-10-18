@@ -12,7 +12,7 @@ import {faUser} from '@fortawesome/free-solid-svg-icons/faUser';
 import {WelcomeScreen} from '../screens/home/WelcomeScreen.tsx';
 import {CatalogScreen} from '../screens/catalog/CatalogScreen';
 import {CarDetailScreen} from '../screens/catalog/CarDetailScreen';
-import {CarFormScreen} from '../screens/catalog/CarFormScreen';
+import {CarAddScreen, CarFormScreen} from '../screens/catalog/CarFormScreen';
 import {AppHeader} from '../components/layout/AppHeader';
 import {AppIcon} from '../components/ui/AppIcon';
 import {AppDrawerParamList, AppTabParamList, CatalogStackParamList} from './types';
@@ -98,10 +98,11 @@ function AuthenticatedTabs() {
       />
       <Tabs.Screen
         name="AddCar"
-        component={WelcomeScreen}
+        component={CarAddScreen}
         options={{
           title: 'Tambah Mobil',
           tabBarLabel: 'Tambah',
+          tabBarAccessibilityLabel: 'Tambah Mobil',
           tabBarIcon: AddCarTabIcon,
         }}
       />

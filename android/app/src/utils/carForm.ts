@@ -151,7 +151,34 @@ export function buildRemoveImagesFormData(imageIds: string[]): FormData {
   return body;
 }
 
-export function buildCarImagesFormData(images: {uri: string; name: string; type: string}[]): FormData {
+export interface CarPhotoFile {
+  uri: string;
+  name: string;
+  type: string;
+}
+
+export function buildCarCreateFormData(values: CarFormValues, images: CarPhotoFile[]): FormData {
+  const body = new FormData();
+  body.append('cars', JSON.stringify([{
+    name: values.name.trim(),
+    manufacturer: values.manufacturer.trim(),
+    year: Number(digitsOnly(values.year, 4)),
+    price: Number(digitsOnly(values.price)),
+    status: values.status || null,
+    validity_period: toIsoDate(values.validity_period),
+    mileage: values.mileage.trim() ? Number(digitsOnly(values.mileage)) : null,
+    transmission: values.transmission.trim() || null,
+    fuel: values.fuel.trim() || null,
+    color: values.color.trim() || null,
+    showroom_name: values.showroom_name.trim() || null,
+    showroom_address: values.showroom_address.trim() || null,
+    description: values.description.trim() || null,
+  }]));
+  images.forEach(image => body.append('images_0', image));
+  return body;
+}
+
+export function buildCarImagesFormData(images: CarPhotoFile[]): FormData {
   const body = new FormData();
   images.forEach(image => body.append('images', image));
   return body;

@@ -1,5 +1,5 @@
-import React from 'react';
-import {Modal, StyleSheet, Text, View} from 'react-native';
+import React, {useEffect} from 'react';
+import {Keyboard, Modal, StyleSheet, Text, View} from 'react-native';
 import {AppButton, ButtonVariant} from './AppButton';
 import {colors} from '../../theme/colors';
 import {typography} from '../../theme/typography';
@@ -25,6 +25,12 @@ export function ConfirmationModal({
   onConfirm,
   onCancel,
 }: ConfirmationModalProps) {
+  useEffect(() => {
+    if (visible) {
+      Keyboard.dismiss();
+    }
+  }, [visible]);
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={loading ? undefined : onCancel}>
       <View style={styles.backdrop}>
@@ -45,7 +51,7 @@ export function ConfirmationModal({
 }
 
 const styles = StyleSheet.create({
-  backdrop: {flex: 1, paddingTop: 80, paddingHorizontal: 10, backgroundColor: colors.modalOverlay},
+  backdrop: {flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 24, paddingHorizontal: 10, backgroundColor: colors.modalOverlay},
   dialog: {width: '100%', maxWidth: 480, alignSelf: 'center', gap: 12, padding: 20, borderRadius: 8, backgroundColor: colors.surface},
   message: {fontFamily: typography.regular, fontSize: 14, lineHeight: 22, textAlign: 'center', color: colors.textSecondary},
   actions: {flexDirection: 'row', gap: 8},

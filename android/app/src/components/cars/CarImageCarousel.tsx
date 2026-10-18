@@ -96,7 +96,7 @@ export function CarImageCarousel({images, name, disabled = false, onDelete, onHi
         contentContainerStyle={{paddingHorizontal: sidePadding, gap: SPACING}}
         onMomentumScrollEnd={event => settle(event.nativeEvent.contentOffset.x)}>
         {slides.map((image, slideIndex) => {
-          const uri = resolveImageUrl(image.url);
+          const uri = /^(file|content):\/\//i.test(image.url) ? image.url : resolveImageUrl(image.url);
           return (
             <View
               key={`${image.id}-${slideIndex}`}

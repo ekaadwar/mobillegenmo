@@ -51,6 +51,15 @@ export async function getCar(id: string, signal?: AbortSignal): Promise<CarDetai
   return normalizeCarDetail(response);
 }
 
+export async function createCars(body: FormData, signal?: AbortSignal): Promise<CarDetail[]> {
+  const response = await apiRequest<unknown>('cars/bulk', {method: 'POST', body, signal});
+  clearCarCache();
+  if (!Array.isArray(response) || response.length === 0) {
+    throw new Error('Data mobil dari server tidak valid.');
+  }
+  return response.map(normalizeCarDetail);
+}
+
 export async function updateCar(id: string, body: FormData, signal?: AbortSignal): Promise<CarDetail> {
   const response = await apiRequest<unknown>(`cars/${encodeURIComponent(id)}`, {
     method: 'PATCH',

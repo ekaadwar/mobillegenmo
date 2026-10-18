@@ -6,16 +6,20 @@ import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import App from '../App';
 import * as Keychain from 'react-native-keychain';
-import {getCar, getCars} from '../android/app/src/services/carService';
+import {createCars, getCar, getCars} from '../android/app/src/services/carService';
 import {LoginScreen} from '../android/app/src/screens/auth/LoginScreen';
 import {CarDetailScreen} from '../android/app/src/screens/catalog/CarDetailScreen';
 import {CarCard} from '../android/app/src/components/cars/CarCard';
 import {CarDetail} from '../android/app/src/types/car';
+import {CarAddScreen} from '../android/app/src/screens/catalog/CarFormScreen';
+import {AppTextInput} from '../android/app/src/components/ui/AppTextInput';
+import {CarStatusSelector} from '../android/app/src/components/cars/CarStatusSelector';
+import {ConfirmationModal} from '../android/app/src/components/ui/ConfirmationModal';
 
 jest.mock('react-native-keychain', () => ({getGenericPassword: jest.fn(), resetGenericPassword: jest.fn()}));
 jest.mock('../android/app/src/services/carService', () => ({
   ...jest.requireActual('../android/app/src/services/carService'),
-  getCars: jest.fn(), getCar: jest.fn(),
+  getCars: jest.fn(), getCar: jest.fn(), createCars: jest.fn(),
 }));
 
 let renderer: ReactTestRenderer.ReactTestRenderer;
@@ -49,4 +53,38 @@ test('navigates from the selected catalog card to detail and back', async () => 
   await ReactTestRenderer.act(async () => { renderer.root.findByType(CarDetailScreen).props.navigation.goBack(); });
   expect(renderer.root.findAllByType(CarDetailScreen)).toHaveLength(0);
   expect(renderer.root.findByType(CarCard).props.car.id).toBe(car.id);
+});
+
+test('opens add from the navbar plus, saves after confirmation, and returns to refreshed catalog', async () => {
+  jest.clearAllMocks();
+  jest.mocked(Keychain.getGenericPassword).mockResolvedValue({
+    username: 'session', password: JSON.stringify({accessToken: 'test-token', tokenType: 'Bearer', expiresAt: Date.now() + 60000}),
+    service: 'mobillegend.auth.session', storage: Keychain.STORAGE_TYPE?.AES_GCM_NO_AUTH,
+  });
+  jest.mocked(getCars).mockResolvedValue({data: [], page: 1, perpage: 8, total: 0, totalPages: 0});
+  jest.mocked(createCars).mockResolvedValue([{id: 'created', images: []} as unknown as CarDetail]);
+  await ReactTestRenderer.act(async () => { renderer = ReactTestRenderer.create(<App />); });
+  const plus = () => renderer.root.findAll(node => node.props.accessibilityLabel === 'Tambah Mobil' && typeof node.props.onPress === 'function')[0];
+  await ReactTestRenderer.act(async () => { plus().props.onPress(); });
+  const addForm = () => renderer.root.findByType(CarAddScreen);
+  const fields = addForm().findAllByType(AppTextInput);
+  expect(fields).toHaveLength(12);
+  await ReactTestRenderer.act(async () => {
+    for (const [label, value] of [['Nama Mobil', 'Avanza'], ['Pabrikan', 'Toyota'], ['Tahun', '2022'], ['Harga Mobil (Rp)', '235000000']]) {
+      fields.find(node => node.props.label === label)!.props.onChangeText(value);
+    }
+    addForm().findByType(CarStatusSelector).props.onChange('ready');
+  });
+  await ReactTestRenderer.act(async () => {
+    addForm().findAll(node => node.props.accessibilityLabel === 'Simpan' && typeof node.props.onPress === 'function')[0].props.onPress();
+  });
+  expect(jest.mocked(createCars)).not.toHaveBeenCalled();
+  expect(addForm().findByType(ConfirmationModal).props.message).toBe('Apakah Anda yakin akan melakukan penambahan data?');
+  const loads = jest.mocked(getCars).mock.calls.length;
+  await ReactTestRenderer.act(async () => { await addForm().findByType(ConfirmationModal).props.onConfirm(); });
+  expect(createCars).toHaveBeenCalledTimes(1);
+  expect(getCars).toHaveBeenCalledTimes(loads + 1);
+  expect(addForm().findAllByType(AppTextInput)).toHaveLength(0);
+  await ReactTestRenderer.act(async () => { plus().props.onPress(); });
+  expect(addForm().findAllByType(AppTextInput).every(node => node.props.value === '')).toBe(true);
 });

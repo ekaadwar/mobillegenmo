@@ -2,6 +2,8 @@ import React, {useEffect, useRef, useState} from 'react';
 import {ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
+import {useIsFocused} from '@react-navigation/native';
 import {faArrowLeft} from '@fortawesome/free-solid-svg-icons/faArrowLeft';
 import {faCalendarDays} from '@fortawesome/free-solid-svg-icons/faCalendarDays';
 import {faCamera} from '@fortawesome/free-solid-svg-icons/faCamera';
@@ -14,15 +16,17 @@ import {AppTextInput} from '../../components/ui/AppTextInput';
 import {ConfirmationModal} from '../../components/ui/ConfirmationModal';
 import {CarImageCarousel} from '../../components/cars/CarImageCarousel';
 import {CarStatusSelector} from '../../components/cars/CarStatusSelector';
-import {CatalogStackParamList} from '../../navigation/types';
-import {getCar, updateCar, updateCarImageHighlight} from '../../services/carService';
-import {CarImage} from '../../types/car';
+import {AppTabParamList, CarFormSource, CatalogStackParamList} from '../../navigation/types';
+import {createCars, getCar, updateCar, updateCarImageHighlight} from '../../services/carService';
+import {Car, CarDetail, CarImage} from '../../types/car';
 import {
+  buildCarCreateFormData,
   buildCarImagesFormData,
   buildCarUpdateFormData,
   buildRemoveImagesFormData,
   CarFormErrors,
   CarFormValues,
+  CarPhotoFile,
   carToFormValues,
   digitsOnly,
   formatDateInput,
@@ -100,10 +104,35 @@ function CalendarIcon({color, size}: {color: string; size: number}) {
 
 export function CarFormScreen({route, navigation}: NativeStackScreenProps<CatalogStackParamList, 'CarForm'>) {
   const {carId, car: initialCar, source} = route.params;
+  return <CarForm carId={carId} initialCar={initialCar} source={source} onLeave={changed => {
+    if (source === 'detail' && changed) {
+      navigation.popTo('CarDetail', {carId, refreshKey: Date.now()});
+    } else {
+      navigation.goBack();
+    }
+  }} />;
+}
+
+export function CarAddScreen({navigation}: BottomTabScreenProps<AppTabParamList, 'AddCar'>) {
+  const focused = useIsFocused();
+  return focused ? <CarForm onLeave={() => navigation.navigate('Catalog', {screen: 'CatalogList'})} /> : null;
+}
+
+interface CarFormProps {
+  carId?: string;
+  initialCar?: Car;
+  source?: CarFormSource;
+  onLeave: (changed: boolean) => void;
+}
+
+type FormImage = CarImage & {file?: CarPhotoFile};
+
+function CarForm({carId, initialCar, source, onLeave}: CarFormProps) {
+  const adding = carId === undefined;
   const [values, setValues] = useState<CarFormValues>(() => (initialCar ? carToFormValues(initialCar) : EMPTY_VALUES));
-  const [images, setImages] = useState<CarImage[]>(initialCar?.images ?? []);
-  const [ready, setReady] = useState(Boolean(initialCar));
-  const [loadingDetails, setLoadingDetails] = useState(true);
+  const [images, setImages] = useState<FormImage[]>(initialCar?.images ?? []);
+  const [ready, setReady] = useState(adding || Boolean(initialCar));
+  const [loadingDetails, setLoadingDetails] = useState(!adding);
   const [refreshing, setRefreshing] = useState(false);
   const [errors, setErrors] = useState<CarFormErrors>({});
   const [message, setMessage] = useState<string | null>(null);
@@ -111,12 +140,18 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [createdCar, setCreatedCar] = useState<CarDetail | null>(null);
+  const localImageId = useRef(0);
   const dirty = useRef(false);
   const changed = useRef(false);
   const mutation = useRef<AbortController | null>(null);
-  const backLabel = source === 'detail' ? 'Kembali ke Detail Katalog' : 'Kembali ke Katalog';
+  const locked = submitting || createdCar !== null;
+  const backLabel = adding ? 'Kembali ke Daftar Mobil' : source === 'detail' ? 'Kembali ke Detail Katalog' : 'Kembali ke Katalog';
 
   useEffect(() => {
+    if (carId === undefined) {
+      return;
+    }
     const controller = new AbortController();
     setLoadingDetails(true);
     setMessage(null);
@@ -151,11 +186,19 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
   useEffect(() => () => mutation.current?.abort(), []);
 
   const leave = () => {
-    if (source === 'detail' && changed.current) {
-      navigation.popTo('CarDetail', {carId, refreshKey: Date.now()});
-    } else {
-      navigation.goBack();
+    mutation.current?.abort();
+    mutation.current = null;
+    setSubmitting(false);
+    setUploading(false);
+    if (adding) {
+      setValues(EMPTY_VALUES);
+      setImages([]);
+      setErrors({});
+      setMessage(null);
+      setPending(null);
+      setCreatedCar(null);
     }
+    onLeave(changed.current);
   };
 
   const setField = (key: TextField) => (value: string) => {
@@ -183,7 +226,7 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
 
   const requestAddImages = () => {
     const remaining = MAX_CAR_IMAGES - images.length;
-    if (mutation.current || pending || loadingDetails || remaining <= 0) {
+    if (mutation.current || pending || loadingDetails || createdCar || remaining <= 0) {
       return;
     }
     const controller = new AbortController();
@@ -233,6 +276,13 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
           }
           return {uri: asset.uri, type: asset.type, name: asset.fileName || `unit-${Date.now()}-${index}`};
         });
+        if (carId === undefined) {
+          const localImages = photos.map(file => ({
+            id: `local-${++localImageId.current}`, url: file.uri, highlight: false, file,
+          }));
+          setImages(previous => [...previous, ...localImages]);
+          return;
+        }
         setUploading(true);
         const updated = await updateCar(carId, buildCarImagesFormData(photos), controller.signal);
         if (!controller.signal.aborted) {
@@ -259,12 +309,45 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
     if (!pending || mutation.current) {
       return;
     }
+    if (adding && pending.type !== 'save') {
+      if (pending.type === 'delete') {
+        setImages(previous => previous.filter(image => image.id !== pending.image.id));
+      } else {
+        setImages(previous => previous.map(image => ({...image, highlight: image.id === pending.image.id})));
+      }
+      setPending(null);
+      return;
+    }
     const controller = new AbortController();
     mutation.current = controller;
     setSubmitting(true);
     setMessage(null);
     try {
-      if (pending.type === 'save') {
+      if (carId === undefined) {
+        const files = images.map(image => image.file!);
+        const created = createdCar ?? (await createCars(buildCarCreateFormData(values, files), controller.signal))[0];
+        if (controller.signal.aborted) {
+          return;
+        }
+        changed.current = true;
+        setCreatedCar(created);
+        const highlightIndex = images.findIndex(image => image.highlight);
+        if (highlightIndex >= 0) {
+          const image = created.images[highlightIndex];
+          if (!image) {
+            throw new Error('Mobil berhasil ditambahkan, tetapi foto highlight tidak ditemukan. Atur highlight melalui Edit Mobil.');
+          }
+          try {
+            await updateCarImageHighlight(image.id, controller.signal);
+          } catch {
+            throw new Error('Mobil berhasil ditambahkan, tetapi highlight gagal disimpan. Coba simpan kembali untuk mengulangi highlight saja.');
+          }
+        }
+        if (!controller.signal.aborted) {
+          setPending(null);
+          leave();
+        }
+      } else if (pending.type === 'save') {
         const updated = await updateCar(carId, buildCarUpdateFormData(values), controller.signal);
         if (controller.signal.aborted) {
           return;
@@ -308,13 +391,13 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
   const renderField = ({key, label, required, numeric, multiline, calendar, placeholder}: FieldConfig) => (
     <AppTextInput
       key={key}
-      label={label}
-      accessibilityLabel={label}
+      label={adding && key === 'description' ? 'Deskripsi Kendaraan' : label}
+      accessibilityLabel={adding && key === 'description' ? 'Deskripsi Kendaraan' : label}
       required={required}
       value={values[key]}
       onChangeText={setField(key)}
       error={errors[key]}
-      disabled={submitting}
+      disabled={locked}
       placeholder={placeholder}
       keyboardType={numeric ? 'number-pad' : 'default'}
       multiline={multiline}
@@ -322,7 +405,12 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
     />
   );
 
-  const modal = pending ? MODAL_COPY[pending.type] : null;
+  const modal = pending ? {
+    ...MODAL_COPY[pending.type],
+    message: adding && pending.type === 'save'
+      ? createdCar ? 'Apakah Anda yakin ingin menyimpan highlight foto?' : 'Apakah Anda yakin akan melakukan penambahan data?'
+      : MODAL_COPY[pending.type].message,
+  } : null;
 
   return (
     <>
@@ -330,7 +418,7 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
         style={styles.screen}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
-        refreshControl={
+        refreshControl={adding ? undefined :
           <RefreshControl
             refreshing={refreshing}
             enabled={!submitting}
@@ -369,7 +457,7 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
                 <CarImageCarousel
                   images={images}
                   name={values.name}
-                  disabled={submitting}
+                  disabled={locked}
                   onDelete={image => setPending({type: 'delete', image})}
                   onHighlight={requestHighlight}
                 />
@@ -381,7 +469,7 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
                   leftIcon={CameraIcon}
                   responsive={false}
                   loading={uploading}
-                  disabled={submitting || loadingDetails || refreshing || images.length >= MAX_CAR_IMAGES}
+                  disabled={locked || loadingDetails || refreshing || images.length >= MAX_CAR_IMAGES}
                   onPress={requestAddImages}
                 />
               </View>
@@ -396,7 +484,7 @@ export function CarFormScreen({route, navigation}: NativeStackScreenProps<Catalo
               <CarStatusSelector
                 required
                 value={values.status}
-                disabled={submitting}
+                disabled={locked}
                 error={errors.status}
                 onChange={status => {
                   dirty.current = true;
