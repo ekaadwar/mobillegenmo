@@ -81,3 +81,4 @@ resources
 
 # Android production signing
 /android/app/mobillegend-upload-key.keystore
+/android/ekamoto-crash.log
