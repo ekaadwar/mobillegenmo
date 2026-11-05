@@ -17,13 +17,13 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import {faEye} from '@fortawesome/free-solid-svg-icons/faEye';
-import {faEyeSlash} from '@fortawesome/free-solid-svg-icons/faEyeSlash';
+import { faEye } from '@fortawesome/free-solid-svg-icons/faEye';
+import { faEyeSlash } from '@fortawesome/free-solid-svg-icons/faEyeSlash';
 
-import {AppIcon} from './AppIcon';
-import {colors} from '../../theme/colors';
-import {typography} from '../../theme/typography';
-import {useResponsive} from '../../hooks/useResponsive';
+import { AppIcon } from './AppIcon';
+import { colors } from '../../theme/colors';
+import { typography } from '../../theme/typography';
+import { useResponsive } from '../../hooks/useResponsive';
 
 type IconRenderer = (props: {
   color: string;
@@ -41,7 +41,7 @@ interface AppTextInputProps
 
   leftIcon?: IconRenderer;
   rightIcon?: IconRenderer;
-  rightAction?: {label: string; onPress: () => void};
+  rightAction?: { label: string; onPress: () => void };
 
   password?: boolean;
 
@@ -69,7 +69,7 @@ export const AppTextInput = forwardRef<
     },
     ref,
   ) => {
-    const {r} = useResponsive();
+    const { r } = useResponsive();
 
     const [passwordVisible, setPasswordVisible] =
       useState(false);
@@ -104,11 +104,11 @@ export const AppTextInput = forwardRef<
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={rightAction.label}
-            accessibilityState={{disabled}}
+            accessibilityState={{ disabled }}
             disabled={disabled}
             hitSlop={r(10)}
             onPress={rightAction.onPress}>
-            {rightIcon({color: colors.textSecondary, size: iconSize})}
+            {rightIcon({ color: colors.textSecondary, size: iconSize })}
           </Pressable>
         );
       }
@@ -151,7 +151,7 @@ export const AppTextInput = forwardRef<
               paddingHorizontal: r(14),
               gap: r(12),
             },
-            textInputProps.multiline && [styles.multilineContainer, {paddingVertical: r(12)}],
+            textInputProps.multiline && [styles.multilineContainer, { paddingVertical: r(12) }],
             Boolean(error) && styles.errorBorder,
           ]}>
           {leftIcon?.({
@@ -173,7 +173,7 @@ export const AppTextInput = forwardRef<
               {
                 fontSize: r(14),
               },
-              textInputProps.multiline && [styles.multilineInput, {minHeight: r(140)}],
+              textInputProps.multiline && [styles.multilineInput, { minHeight: r(140) }],
               inputStyle,
             ]}
           />
@@ -214,11 +214,27 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-
-    backgroundColor: colors.inputBackground,
-
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: colors.inputBorder,
+    borderColor: 'transparent',
+    boxShadow: [
+      {
+        offsetX: 2,
+        offsetY: 2,
+        blurRadius: 5,
+        spreadDistance: 0,
+        color: '#bbc4e4',
+        inset: true,
+      },
+      {
+        offsetX: -4,
+        offsetY: -4,
+        blurRadius: 8,
+        spreadDistance: 0,
+        color: '#FFFFFF',
+        inset: true,
+      },
+    ],
   },
 
   errorBorder: {
@@ -235,10 +251,9 @@ const styles = StyleSheet.create({
 
   input: {
     flex: 1,
-
+    backgroundColor: 'transparent',
     color: colors.textPrimary,
     fontFamily: typography.regular,
-
     paddingVertical: 0,
   },
 

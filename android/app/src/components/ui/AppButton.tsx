@@ -1,4 +1,4 @@
-import React, {ReactNode, useState} from 'react';
+import React, { ReactNode, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -8,9 +8,9 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import {colors} from '../../theme/colors';
-import {typography} from '../../theme/typography';
-import {useResponsive} from '../../hooks/useResponsive';
+import { colors } from '../../theme/colors';
+import { typography } from '../../theme/typography';
+import { useResponsive } from '../../hooks/useResponsive';
 
 export type ButtonVariant =
   | 'primary'
@@ -53,11 +53,19 @@ interface AppButtonProps {
 interface VariantStyle {
   background: string;
   text: string;
-  border: string;
-
+  // border: string;
   hoverBackground: string;
   hoverText: string;
-
+  borderWidth?: number;
+  borderColor?: string;
+  boxShadow?: Array<{
+    offsetX: number;
+    offsetY: number;
+    blurRadius: number;
+    spreadDistance: number;
+    color: string;
+    inset: boolean;
+  }>;
   activeBackground: string;
   activeText: string;
 }
@@ -66,17 +74,60 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   primary: {
     background: colors.primary,
     text: colors.white,
-    border: 'transparent',
     hoverBackground: colors.primaryHover,
     hoverText: colors.white,
     activeBackground: colors.primaryActive,
     activeText: colors.white,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    boxShadow: [
+      {
+        offsetX: -2,
+        offsetY: -2,
+        blurRadius: 4,
+        spreadDistance: 0,
+        color: 'rgba(0, 0, 0, 0.25)',
+        inset: true,
+      },
+      {
+        offsetX: 2,
+        offsetY: 2,
+        blurRadius: 4,
+        spreadDistance: 0,
+        color: '#653ff3',
+        inset: true,
+      },
+      {
+        offsetX: -2,
+        offsetY: -2,
+        blurRadius: 7,
+        spreadDistance: 0,
+        color: 'rgba(39, 9, 150, 0.2)',
+        inset: false,
+      },
+      {
+        offsetX: 4,
+        offsetY: 4,
+        blurRadius: 8,
+        spreadDistance: 0,
+        color: 'rgba(0, 0, 0, 0.25)',
+        inset: false,
+      },
+      {
+        offsetX: 1,
+        offsetY: 1,
+        blurRadius: 2,
+        spreadDistance: 0,
+        color: 'rgba(0, 0, 0, 0.5)',
+        inset: false,
+      },
+    ]
   },
 
   danger: {
     background: colors.danger,
     text: colors.white,
-    border: 'transparent',
+    // border: 'transparent',
     hoverBackground: colors.dangerHover,
     hoverText: colors.white,
     activeBackground: colors.dangerActive,
@@ -86,7 +137,7 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   warning: {
     background: colors.warning,
     text: colors.white,
-    border: 'transparent',
+    // border: 'transparent',
     hoverBackground: colors.warningHover,
     hoverText: colors.warningHoverText,
     activeBackground: colors.warningActive,
@@ -96,7 +147,7 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   success: {
     background: colors.success,
     text: colors.white,
-    border: 'transparent',
+    // border: 'transparent',
     hoverBackground: colors.successHover,
     hoverText: colors.successHoverText,
     activeBackground: colors.successActive,
@@ -106,7 +157,7 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   info: {
     background: colors.info,
     text: colors.white,
-    border: 'transparent',
+    // border: 'transparent',
     hoverBackground: colors.infoHover,
     hoverText: colors.white,
     activeBackground: colors.infoActive,
@@ -116,7 +167,7 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   neutral: {
     background: colors.neutral,
     text: colors.white,
-    border: 'transparent',
+    // border: 'transparent',
     hoverBackground: colors.neutralHover,
     hoverText: colors.white,
     activeBackground: colors.neutralActive,
@@ -126,7 +177,7 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   'primary-outline': {
     background: colors.primaryOutlineBackground,
     text: colors.primary,
-    border: colors.primary,
+    // border: colors.primary,
     hoverBackground: colors.primaryHover,
     hoverText: colors.white,
     activeBackground: colors.primaryActive,
@@ -136,7 +187,7 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   'danger-outline': {
     background: colors.dangerOutlineBackground,
     text: colors.danger,
-    border: colors.danger,
+    // border: colors.danger,
     hoverBackground: colors.dangerHover,
     hoverText: colors.white,
     activeBackground: colors.dangerActive,
@@ -146,7 +197,7 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   'warning-outline': {
     background: colors.warningOutlineBackground,
     text: colors.warningActive,
-    border: colors.warningActive,
+    // border: colors.warningActive,
     hoverBackground: colors.warningHover,
     hoverText: colors.warningHoverText,
     activeBackground: colors.warningActive,
@@ -156,7 +207,7 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   'success-outline': {
     background: colors.successOutlineBackground,
     text: colors.successActive,
-    border: colors.successActive,
+    // border: colors.successActive,
     hoverBackground: colors.successHover,
     hoverText: colors.successHoverText,
     activeBackground: colors.successActive,
@@ -166,7 +217,7 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   'info-outline': {
     background: colors.infoOutlineBackground,
     text: colors.infoOutline,
-    border: colors.infoOutline,
+    // border: colors.infoOutline,
     hoverBackground: colors.infoHover,
     hoverText: colors.white,
     activeBackground: colors.infoActive,
@@ -176,7 +227,7 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   'neutral-outline': {
     background: colors.neutralOutlineBackground,
     text: colors.neutral,
-    border: colors.neutral,
+    // border: colors.neutral,
     hoverBackground: colors.neutralHover,
     hoverText: colors.white,
     activeBackground: colors.neutralActive,
@@ -198,7 +249,7 @@ export function AppButton({
   size = 48,
   responsive = true,
 }: AppButtonProps) {
-  const {r} = useResponsive();
+  const { r } = useResponsive();
   const measure = responsive ? r : (value: number) => value;
   const [hovered, setHovered] = useState(false);
 
@@ -209,6 +260,26 @@ export function AppButton({
       return {
         backgroundColor: variantStyle.activeBackground,
         color: variantStyle.activeText,
+        borderWidth: 1,
+        borderColor: 'transparent',
+        boxShadow: [
+          {
+            offsetX: 2,
+            offsetY: 2,
+            blurRadius: 5,
+            spreadDistance: 0,
+            color: '#bbc4e4',
+            inset: false,
+          },
+          {
+            offsetX: -4,
+            offsetY: -4,
+            blurRadius: 8,
+            spreadDistance: 0,
+            color: '#FFFFFF',
+            inset: false,
+          },
+        ],
       };
     }
 
@@ -230,12 +301,12 @@ export function AppButton({
       accessibilityRole="button"
       accessibilityLabel={title}
       hitSlop={iconOnly ? 6 : undefined}
-      accessibilityState={{disabled: disabled || loading}}
+      accessibilityState={{ disabled: disabled || loading }}
       disabled={disabled || loading}
       onPress={onPress}
       onHoverIn={() => setHovered(true)}
       onHoverOut={() => setHovered(false)}
-      style={({pressed}) => {
+      style={({ pressed }) => {
         const state = getStateStyle(pressed);
 
         return [
@@ -246,7 +317,51 @@ export function AppButton({
             paddingHorizontal: measure(compact ? 8 : 20),
             borderRadius: measure(8),
             backgroundColor: state.backgroundColor,
-            borderColor: variantStyle.border,
+            // borderColor: variantStyle.border,
+            borderWidth: 1,
+            borderColor: 'transparent',
+            boxShadow: [
+              {
+                offsetX: -2,
+                offsetY: -2,
+                blurRadius: 4,
+                spreadDistance: 0,
+                color: 'rgba(0, 0, 0, 0.25)',
+                inset: true,
+              },
+              {
+                offsetX: 2,
+                offsetY: 2,
+                blurRadius: 4,
+                spreadDistance: 0,
+                color: '#653ff3',
+                inset: true,
+              },
+              {
+                offsetX: -2,
+                offsetY: -2,
+                blurRadius: 7,
+                spreadDistance: 0,
+                color: 'rgba(39, 9, 150, 0.2)',
+                inset: false,
+              },
+              {
+                offsetX: 4,
+                offsetY: 4,
+                blurRadius: 8,
+                spreadDistance: 0,
+                color: 'rgba(0, 0, 0, 0.25)',
+                inset: false,
+              },
+              {
+                offsetX: 1,
+                offsetY: 1,
+                blurRadius: 2,
+                spreadDistance: 0,
+                color: 'rgba(0, 0, 0, 0.5)',
+                inset: false,
+              },
+            ]
           },
           width === 'full' ? styles.full : styles.auto,
           iconOnly && {
@@ -256,12 +371,12 @@ export function AppButton({
           (disabled || loading) && styles.disabled,
         ] as ViewStyle[];
       }}>
-      {({pressed}) => {
+      {({ pressed }) => {
         const state = getStateStyle(pressed);
         const iconSize = measure(16);
 
         return (
-          <View style={[styles.content, {gap: measure(compact ? 4 : 10)}]}>
+          <View style={[styles.content, { gap: measure(compact ? 4 : 10) }]}>
             {loading ? (
               <ActivityIndicator size="small" color={state.color} />
             ) : (

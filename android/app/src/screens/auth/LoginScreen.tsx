@@ -18,11 +18,11 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 
-import {faArrowRight} from '@fortawesome/free-solid-svg-icons/faArrowRight';
-import {faLock} from '@fortawesome/free-solid-svg-icons/faLock';
-import {faUser} from '@fortawesome/free-solid-svg-icons/faUser';
+import { faArrowRight } from '@fortawesome/free-solid-svg-icons/faArrowRight';
+import { faLock } from '@fortawesome/free-solid-svg-icons/faLock';
+import { faUser } from '@fortawesome/free-solid-svg-icons/faUser';
 
-import {AppIcon} from '../../components/ui/AppIcon';
+import { AppIcon } from '../../components/ui/AppIcon';
 import {
   AppButton,
 } from '../../components/ui/AppButton';
@@ -31,15 +31,15 @@ import {
   AppTextInput,
 } from '../../components/ui/AppTextInput';
 
-import {useAuth} from '../../contexts/AuthContext';
-import {useResponsive} from '../../hooks/useResponsive';
+import { useAuth } from '../../contexts/AuthContext';
+import { useResponsive } from '../../hooks/useResponsive';
 
 import {
   ApiError,
 } from '../../services/authService';
 
-import {colors} from '../../theme/colors';
-import {typography} from '../../theme/typography';
+import { colors } from '../../theme/colors';
+import { typography } from '../../theme/typography';
 
 interface LoginErrors {
   username?: string;
@@ -48,7 +48,7 @@ interface LoginErrors {
 }
 
 export function LoginScreen() {
-  const {login} = useAuth();
+  const { login } = useAuth();
 
   const {
     height,
@@ -161,10 +161,9 @@ export function LoginScreen() {
             styles.card,
             {
               width: contentWidth,
-              borderRadius: r(8),
-
+              borderRadius: r(18),
               paddingHorizontal: r(20),
-              paddingVertical: r(32),
+              paddingVertical: r(20),
             },
           ]}>
           <Text
@@ -215,7 +214,7 @@ export function LoginScreen() {
             onSubmitEditing={() => {
               passwordRef.current?.focus();
             }}
-            leftIcon={({color, size}) => (
+            leftIcon={({ color, size }) => (
               <AppIcon icon={faUser} size={size} color={color} />
             )}
           />
@@ -249,7 +248,7 @@ export function LoginScreen() {
               }
             }}
             onSubmitEditing={handleLogin}
-            leftIcon={({color, size}) => (
+            leftIcon={({ color, size }) => (
               <AppIcon icon={faLock} size={size} color={color} />
             )}
           />
@@ -279,7 +278,7 @@ export function LoginScreen() {
             width="full"
             loading={isSubmitting}
             onPress={handleLogin}
-            rightIcon={({color, size}) => (
+            rightIcon={({ color, size }) => (
               <AppIcon icon={faArrowRight} size={size} color={color} />
             )}
           />
@@ -305,40 +304,51 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: colors.surface,
-
+    backgroundColor: colors.background,
     elevation: 10,
-
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
+    boxShadow: [
+      // Drop Shadow 1
+      {
+        offsetX: -6,
+        offsetY: -6,
+        blurRadius: 25,
+        spreadDistance: 0,
+        color: '#FFFFFF',
+      },
+      // Drop Shadow 2
+      {
+        offsetX: -4,
+        offsetY: -4,
+        blurRadius: 6,
+        spreadDistance: 0,
+        color: '#FFFFFF',
+      },
+      // Drop Shadow 3
+      {
+        offsetX: 4,
+        offsetY: 4,
+        blurRadius: 4,
+        spreadDistance: 0,
+        color: 'rgba(0, 0, 0, 0.2)',
+      },
+    ]
   },
 
   title: {
     textAlign: 'center',
-
     color: colors.textPrimary,
-
     fontFamily: typography.bold,
   },
 
   subtitle: {
     textAlign: 'center',
-
     color: colors.textSecondary,
-
     fontFamily: typography.regular,
   },
 
   formError: {
     color: colors.error,
-
     fontFamily: typography.regular,
-
     textAlign: 'center',
   },
 });
