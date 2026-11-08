@@ -51,8 +51,8 @@ interface AppButtonProps {
 }
 
 interface VariantStyle {
-  background: string;
-  text: string;
+  backgroundColor: string;
+  color: string;
   // border: string;
   hoverBackground: string;
   hoverText: string;
@@ -72,8 +72,8 @@ interface VariantStyle {
 
 const variants: Record<ButtonVariant, VariantStyle> = {
   primary: {
-    background: colors.primary,
-    text: colors.white,
+    backgroundColor: colors.primary,
+    color: colors.white,
     hoverBackground: colors.primaryHover,
     hoverText: colors.white,
     activeBackground: colors.primaryActive,
@@ -125,8 +125,8 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   },
 
   danger: {
-    background: colors.danger,
-    text: colors.white,
+    backgroundColor: colors.danger,
+    color: colors.white,
     // border: 'transparent',
     hoverBackground: colors.dangerHover,
     hoverText: colors.white,
@@ -135,8 +135,8 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   },
 
   warning: {
-    background: colors.warning,
-    text: colors.white,
+    backgroundColor: colors.warning,
+    color: colors.white,
     // border: 'transparent',
     hoverBackground: colors.warningHover,
     hoverText: colors.warningHoverText,
@@ -145,8 +145,8 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   },
 
   success: {
-    background: colors.success,
-    text: colors.white,
+    backgroundColor: colors.success,
+    color: colors.white,
     // border: 'transparent',
     hoverBackground: colors.successHover,
     hoverText: colors.successHoverText,
@@ -155,8 +155,8 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   },
 
   info: {
-    background: colors.info,
-    text: colors.white,
+    backgroundColor: colors.info,
+    color: colors.white,
     // border: 'transparent',
     hoverBackground: colors.infoHover,
     hoverText: colors.white,
@@ -165,8 +165,8 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   },
 
   neutral: {
-    background: colors.neutral,
-    text: colors.white,
+    backgroundColor: colors.neutral,
+    color: colors.white,
     // border: 'transparent',
     hoverBackground: colors.neutralHover,
     hoverText: colors.white,
@@ -175,8 +175,8 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   },
 
   'primary-outline': {
-    background: colors.primaryOutlineBackground,
-    text: colors.primary,
+    backgroundColor: colors.primaryOutlineBackground,
+    color: colors.primary,
     // border: colors.primary,
     hoverBackground: colors.primaryHover,
     hoverText: colors.white,
@@ -185,8 +185,8 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   },
 
   'danger-outline': {
-    background: colors.dangerOutlineBackground,
-    text: colors.danger,
+    backgroundColor: colors.dangerOutlineBackground,
+    color: colors.danger,
     // border: colors.danger,
     hoverBackground: colors.dangerHover,
     hoverText: colors.white,
@@ -195,8 +195,8 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   },
 
   'warning-outline': {
-    background: colors.warningOutlineBackground,
-    text: colors.warningActive,
+    backgroundColor: colors.warningOutlineBackground,
+    color: colors.warningActive,
     // border: colors.warningActive,
     hoverBackground: colors.warningHover,
     hoverText: colors.warningHoverText,
@@ -205,8 +205,8 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   },
 
   'success-outline': {
-    background: colors.successOutlineBackground,
-    text: colors.successActive,
+    backgroundColor: colors.successOutlineBackground,
+    color: colors.successActive,
     // border: colors.successActive,
     hoverBackground: colors.successHover,
     hoverText: colors.successHoverText,
@@ -215,8 +215,8 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   },
 
   'info-outline': {
-    background: colors.infoOutlineBackground,
-    text: colors.infoOutline,
+    backgroundColor: colors.infoOutlineBackground,
+    color: colors.infoOutline,
     // border: colors.infoOutline,
     hoverBackground: colors.infoHover,
     hoverText: colors.white,
@@ -225,8 +225,8 @@ const variants: Record<ButtonVariant, VariantStyle> = {
   },
 
   'neutral-outline': {
-    background: colors.neutralOutlineBackground,
-    text: colors.neutral,
+    backgroundColor: colors.neutralOutlineBackground,
+    color: colors.neutral,
     // border: colors.neutral,
     hoverBackground: colors.neutralHover,
     hoverText: colors.white,
@@ -291,8 +291,9 @@ export function AppButton({
     }
 
     return {
-      backgroundColor: variantStyle.background,
-      color: variantStyle.text,
+      // backgroundColor: variantStyle.background,
+      // color: variantStyle.text,
+      ...variants[variant]
     };
   };
 
@@ -312,56 +313,11 @@ export function AppButton({
         return [
           styles.button,
           {
+            ...state,
             minHeight: measure(48),
             paddingVertical: measure(10),
             paddingHorizontal: measure(compact ? 8 : 20),
             borderRadius: measure(8),
-            backgroundColor: state.backgroundColor,
-            // borderColor: variantStyle.border,
-            borderWidth: 1,
-            borderColor: 'transparent',
-            boxShadow: [
-              {
-                offsetX: -2,
-                offsetY: -2,
-                blurRadius: 4,
-                spreadDistance: 0,
-                color: 'rgba(0, 0, 0, 0.25)',
-                inset: true,
-              },
-              {
-                offsetX: 2,
-                offsetY: 2,
-                blurRadius: 4,
-                spreadDistance: 0,
-                color: '#653ff3',
-                inset: true,
-              },
-              {
-                offsetX: -2,
-                offsetY: -2,
-                blurRadius: 7,
-                spreadDistance: 0,
-                color: 'rgba(39, 9, 150, 0.2)',
-                inset: false,
-              },
-              {
-                offsetX: 4,
-                offsetY: 4,
-                blurRadius: 8,
-                spreadDistance: 0,
-                color: 'rgba(0, 0, 0, 0.25)',
-                inset: false,
-              },
-              {
-                offsetX: 1,
-                offsetY: 1,
-                blurRadius: 2,
-                spreadDistance: 0,
-                color: 'rgba(0, 0, 0, 0.5)',
-                inset: false,
-              },
-            ]
           },
           width === 'full' ? styles.full : styles.auto,
           iconOnly && {

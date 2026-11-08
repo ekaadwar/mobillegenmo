@@ -1,4 +1,4 @@
-import {API_CONFIG} from '../config/api';
+import { API_CONFIG } from '../config/api';
 
 export class ApiError extends Error {
   statusCode?: number;
@@ -36,7 +36,7 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
-  const {authenticated = true, headers, signal, ...requestOptions} = options;
+  const { authenticated = true, headers, signal, ...requestOptions } = options;
 
   try {
     const token = authenticated ? await handlers?.getAccessToken() : null;
@@ -54,7 +54,7 @@ export async function apiRequest<T>(
     }
 
     const abortRequest = () => controller.abort();
-    signal?.addEventListener('abort', abortRequest, {once: true});
+    signal?.addEventListener('abort', abortRequest, { once: true });
 
     let response: Response;
     try {

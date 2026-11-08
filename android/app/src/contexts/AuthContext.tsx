@@ -8,9 +8,9 @@ import React, {
   useState,
 } from 'react';
 
-import {loginApi} from '../services/authService';
-import {configureApiClient} from '../services/apiClient';
-import {clearCarCache} from '../services/carService';
+import { loginApi } from '../services/authService';
+import { configureApiClient } from '../services/apiClient';
+import { clearCarCache } from '../services/carService';
 
 import {
   clearAuthSession,
@@ -25,10 +25,8 @@ import {
 
 interface AuthContextValue {
   session: AuthSession | null;
-
   isAuthenticated: boolean;
   isBootstrapping: boolean;
-
   login: (payload: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -112,10 +110,8 @@ export function AuthProvider({
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
-
       isAuthenticated: Boolean(session),
       isBootstrapping,
-
       login,
       logout,
     }),

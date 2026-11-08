@@ -43,6 +43,19 @@ Jest and React Test Renderer cover reusable components, catalog/detail navigatio
 
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
 
+## Local API On Android
+
+When `API_BASE_URL=http://localhost:3000/api/v1`, Android's `localhost` refers to the emulator or device, not the development computer. With the backend running on the computer, forward its port before logging in:
+
+```sh
+adb reverse tcp:3000 tcp:3000
+adb reverse --list
+```
+
+The list should include `tcp:3000 tcp:3000`. Metro's `tcp:8081` mapping does not forward API traffic. Reapply the API mapping after reconnecting the device or restarting the emulator; with multiple devices, use `adb -s <device-id> reverse tcp:3000 tcp:3000`.
+
+The standard Android Studio emulator can alternatively use `http://10.0.2.2:3000/api/v1` without reverse forwarding. A physical device without ADB forwarding needs the computer's reachable LAN address and a backend listening on that interface. Restart Metro with `npm start -- --reset-cache` after changing the environment configuration.
+
 ## Step 1: Start Metro
 
 First, you will need to run **Metro**, the JavaScript build tool for React Native.
