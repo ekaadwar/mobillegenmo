@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -6,8 +6,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {useIsFocused, useNavigation} from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import {
   faMagnifyingGlass,
 } from '@fortawesome/free-solid-svg-icons/faMagnifyingGlass';
@@ -15,35 +15,35 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons/faXmark';
 
-import {AppTextInput} from '../../components/ui/AppTextInput';
-import {AppIcon} from '../../components/ui/AppIcon';
-import {CarCard} from '../../components/cars/CarCard';
-import {CarCardSkeleton} from '../../components/cars/CarCardSkeleton';
-import {CarPagination} from '../../components/cars/CarPagination';
-import {YearRangeFilter} from '../../components/cars/YearRangeFilter';
-import {useDebounce} from '../../hooks/useDebounce';
-import {useResponsive} from '../../hooks/useResponsive';
-import {Car, CarListParams, CarListResponse} from '../../types/car';
-import {CatalogStackParamList} from '../../navigation/types';
-import {getCachedCars, getCars} from '../../services/carService';
-import {ApiError} from '../../services/apiClient';
-import {colors} from '../../theme/colors';
-import {typography} from '../../theme/typography';
+import { AppTextInput } from '../../components/ui/AppTextInput';
+import { AppIcon } from '../../components/ui/AppIcon';
+import { CarCard } from '../../components/cars/CarCard';
+import { CarCardSkeleton } from '../../components/cars/CarCardSkeleton';
+import { CarPagination } from '../../components/cars/CarPagination';
+import { YearRangeFilter } from '../../components/cars/YearRangeFilter';
+import { useDebounce } from '../../hooks/useDebounce';
+import { useResponsive } from '../../hooks/useResponsive';
+import { Car, CarListParams, CarListResponse } from '../../types/car';
+import { CatalogStackParamList } from '../../navigation/types';
+import { getCachedCars, getCars } from '../../services/carService';
+import { ApiError } from '../../services/apiClient';
+import { colors } from '../../theme/colors';
+import { typography } from '../../theme/typography';
 
 const PER_PAGE = 8;
 
-function SearchIcon({color, size}: {color: string; size: number}) {
+function SearchIcon({ color, size }: { color: string; size: number }) {
   return <AppIcon icon={faMagnifyingGlass} size={size} color={color} />;
 }
 
-function ClearIcon({color, size}: {color: string; size: number}) {
+function ClearIcon({ color, size }: { color: string; size: number }) {
   return <AppIcon icon={faXmark} size={size} color={color} />;
 }
 
 export function CatalogScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<CatalogStackParamList>>();
   const isFocused = useIsFocused();
-  const {r, contentWidth} = useResponsive();
+  const { r, contentWidth } = useResponsive();
   const listRef = useRef<FlatList<Car>>(null);
   const [searchInput, setSearchInput] = useState('');
   const debouncedSearch = useDebounce(searchInput.trim(), 1000);
@@ -64,7 +64,7 @@ export function CatalogScreen() {
     const params: CarListParams = {
       page,
       perpage: PER_PAGE,
-      ...(debouncedSearch ? {name: debouncedSearch} : {}),
+      ...(debouncedSearch ? { name: debouncedSearch } : {}),
       ...(yearRange ?? {}),
     };
     const cached = getCachedCars(params);
@@ -125,13 +125,13 @@ export function CatalogScreen() {
 
   const changePage = (nextPage: number) => {
     setPage(nextPage);
-    listRef.current?.scrollToOffset({offset: 0, animated: false});
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
   };
 
   const renderHeader = () => (
-    <View style={[styles.contentColumn, {width: contentWidth, paddingTop: r(20), paddingBottom: r(16)}]}>
-      <Text style={[styles.title, {fontSize: r(26)}]}>Katalog Mobil</Text>
-      <Text style={[styles.description, {fontSize: r(14), marginTop: r(2), marginBottom: r(18)}]}>
+    <View style={[styles.contentColumn, { width: contentWidth, paddingTop: r(20), paddingBottom: r(16) }]}>
+      <Text style={[styles.title, { fontSize: r(26) }]}>Katalog Mobil</Text>
+      <Text style={[styles.description, { fontSize: r(14), marginTop: r(2), marginBottom: r(18) }]}>
         Kelola seluruh katalog mobil bekas Mobil Legend.
       </Text>
       <AppTextInput
@@ -148,9 +148,9 @@ export function CatalogScreen() {
         autoCapitalize="none"
         leftIcon={SearchIcon}
         rightIcon={searchInput ? ClearIcon : undefined}
-        rightAction={searchInput ? {label: 'Hapus pencarian', onPress: clearSearch} : undefined}
-        containerStyle={{marginBottom: r(8)}}
-        inputStyle={{minHeight: r(44)}}
+        rightAction={searchInput ? { label: 'Hapus pencarian', onPress: clearSearch } : undefined}
+        containerStyle={{ marginBottom: r(8) }}
+        inputStyle={{ minHeight: r(44) }}
       />
       <YearRangeFilter
         value={yearRange}
@@ -166,7 +166,7 @@ export function CatalogScreen() {
   const renderEmpty = () => {
     if (loading) {
       return (
-        <View style={[styles.contentColumn, {width: contentWidth}]}>
+        <View style={[styles.contentColumn, { width: contentWidth }]}>
           <CarCardSkeleton />
           <CarCardSkeleton />
         </View>
@@ -174,7 +174,7 @@ export function CatalogScreen() {
     }
     if (error) {
       return (
-        <View style={[styles.state, {padding: r(24)}]}>
+        <View style={[styles.state, { padding: r(24) }]}>
           <Text style={styles.stateTitle}>Katalog tidak dapat dimuat</Text>
           <Text style={styles.stateText}>{error}</Text>
           <Pressable accessibilityRole="button" accessibilityLabel="Coba lagi memuat katalog" onPress={() => setRetryCount(count => count + 1)} style={styles.retry}>
@@ -185,7 +185,7 @@ export function CatalogScreen() {
     }
     const hasFilter = Boolean(debouncedSearch || yearRange);
     return (
-      <View style={[styles.state, {padding: r(24)}]}>
+      <View style={[styles.state, { padding: r(24) }]}>
         <Text style={styles.stateTitle}>{hasFilter ? 'Mobil tidak ditemukan' : 'Katalog masih kosong'}</Text>
         <Text style={styles.stateText}>
           {hasFilter ? 'Coba ubah kata pencarian atau rentang tahun.' : 'Belum ada mobil yang tersedia.'}
@@ -198,15 +198,15 @@ export function CatalogScreen() {
     <FlatList
       ref={listRef}
       style={styles.list}
-      contentContainerStyle={{paddingBottom: r(18)}}
+      contentContainerStyle={{ paddingBottom: r(18) }}
       data={loading || error ? [] : response?.data ?? []}
       keyExtractor={car => car.id}
-      renderItem={({item}) => (
-        <View style={[styles.contentColumn, {width: contentWidth}]}>
+      renderItem={({ item }) => (
+        <View style={[styles.contentColumn, { width: contentWidth }]}>
           <CarCard
             car={item}
-            onDetail={car => navigation.navigate('CarDetail', {carId: car.id})}
-            onEdit={car => navigation.navigate('CarForm', {carId: car.id, car, source: 'catalog'})}
+            onDetail={car => navigation.navigate('CarDetail', { carId: car.id })}
+            onEdit={car => navigation.navigate('CarForm', { carId: car.id, car, source: 'catalog' })}
           />
         </View>
       )}
@@ -235,13 +235,13 @@ export function CatalogScreen() {
 }
 
 const styles = StyleSheet.create({
-  list: {flex: 1, backgroundColor: colors.background},
-  contentColumn: {alignSelf: 'center'},
-  title: {color: colors.primary, fontFamily: typography.bold},
-  description: {color: colors.textPrimary, fontFamily: typography.regular},
-  state: {minHeight: 220, justifyContent: 'center', alignItems: 'center'},
-  stateTitle: {textAlign: 'center', color: colors.textPrimary, fontFamily: typography.semiBold, fontSize: 16},
-  stateText: {marginTop: 8, textAlign: 'center', color: colors.textSecondary, fontFamily: typography.regular, fontSize: 13},
-  retry: {marginTop: 16, minHeight: 44, paddingHorizontal: 18, justifyContent: 'center', borderRadius: 8, backgroundColor: colors.primary},
-  retryText: {color: colors.white, fontFamily: typography.semiBold},
+  list: { flex: 1, backgroundColor: colors.background },
+  contentColumn: { alignSelf: 'center' },
+  title: { color: colors.primary, fontFamily: typography.bold },
+  description: { color: colors.textPrimary, fontFamily: typography.regular },
+  state: { minHeight: 220, justifyContent: 'center', alignItems: 'center' },
+  stateTitle: { textAlign: 'center', color: colors.textPrimary, fontFamily: typography.semiBold, fontSize: 16 },
+  stateText: { marginTop: 8, textAlign: 'center', color: colors.textSecondary, fontFamily: typography.regular, fontSize: 13 },
+  retry: { marginTop: 16, minHeight: 44, paddingHorizontal: 18, justifyContent: 'center', borderRadius: 8, backgroundColor: colors.primary },
+  retryText: { color: colors.white, fontFamily: typography.semiBold },
 });

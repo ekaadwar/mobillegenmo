@@ -51,8 +51,8 @@ export function YearRangeFilter({
   const label = value
     ? `${value.start_year} - ${value.end_year}`
     : firstYear
-    ? `${firstYear} - Pilih tahun`
-    : 'Pilih rentang tahun';
+      ? `${firstYear} - Pilih tahun`
+      : 'Pilih rentang tahun';
 
   const selectYear = (year: number) => {
     if (firstYear === null) {
@@ -156,9 +156,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     borderWidth: 1,
-    borderColor: colors.inputBorder,
+    borderColor: "transparent",
     borderRadius: 8,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
+    boxShadow: [
+      {
+        offsetX: 2,
+        offsetY: 2,
+        blurRadius: 5,
+        spreadDistance: 0,
+        color: '#bbc4e4',
+        inset: true,
+      },
+      {
+        offsetX: -4,
+        offsetY: -4,
+        blurRadius: 8,
+        spreadDistance: 0,
+        color: '#FFFFFF',
+        inset: true,
+      },
+    ],
   },
   triggerText: {
     flex: 1,
