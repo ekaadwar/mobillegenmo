@@ -9,6 +9,7 @@ import { ButtonVariant } from './AppButton';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { useResponsive } from '../../hooks/useResponsive';
+import { variants } from '../../theme/boxShadowEmerge';
 
 interface AppBadgeProps {
   label: string;
@@ -46,19 +47,20 @@ export function AppBadge({
   icon,
 }: AppBadgeProps) {
   const { r } = useResponsive();
-  const palette = badgeColors[variant];
+  const palette = variants[variant];
 
   return (
     <View
       style={[
         styles.badge,
         {
-          backgroundColor: palette.background,
-          borderColor: palette.border,
+          backgroundColor: palette.backgroundColor,
+          borderColor: palette.borderColor,
           borderRadius: r(8),
           paddingHorizontal: r(12),
           paddingVertical: r(4),
           gap: r(5),
+          boxShadow: palette.boxShadow,
         },
       ]}>
       {icon}
@@ -66,7 +68,7 @@ export function AppBadge({
         numberOfLines={1}
         style={[
           styles.label,
-          { color: palette.text, fontSize: r(12) },
+          { color: palette.color, fontSize: r(12) },
         ]}>
         {label}
       </Text>
@@ -79,7 +81,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 0,
   },
   label: {
     fontFamily: typography.medium,

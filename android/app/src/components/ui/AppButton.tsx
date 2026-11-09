@@ -7,7 +7,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { variants } from '../../theme/boxShadowCustom';
+import { variants } from '../../theme/boxShadowEmerge';
 import { typography } from '../../theme/typography';
 import { useResponsive } from '../../hooks/useResponsive';
 
