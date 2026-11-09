@@ -7,8 +7,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-
-import { colors } from '../../theme/colors';
+import { variants } from '../../theme/boxShadowCustom';
 import { typography } from '../../theme/typography';
 import { useResponsive } from '../../hooks/useResponsive';
 
@@ -38,10 +37,8 @@ interface AppButtonProps {
   onPress: () => void;
   variant?: ButtonVariant;
   width?: ButtonWidth;
-
   leftIcon?: IconRenderer;
   rightIcon?: IconRenderer;
-
   disabled?: boolean;
   loading?: boolean;
   compact?: boolean;
@@ -49,191 +46,6 @@ interface AppButtonProps {
   size?: 32 | 48;
   responsive?: boolean;
 }
-
-interface VariantStyle {
-  backgroundColor: string;
-  color: string;
-  // border: string;
-  hoverBackground: string;
-  hoverText: string;
-  borderWidth?: number;
-  borderColor?: string;
-  boxShadow?: Array<{
-    offsetX: number;
-    offsetY: number;
-    blurRadius: number;
-    spreadDistance: number;
-    color: string;
-    inset: boolean;
-  }>;
-  activeBackground: string;
-  activeText: string;
-}
-
-const variants: Record<ButtonVariant, VariantStyle> = {
-  primary: {
-    backgroundColor: colors.primary,
-    color: colors.white,
-    hoverBackground: colors.primaryHover,
-    hoverText: colors.white,
-    activeBackground: colors.primaryActive,
-    activeText: colors.white,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    boxShadow: [
-      {
-        offsetX: -2,
-        offsetY: -2,
-        blurRadius: 4,
-        spreadDistance: 0,
-        color: 'rgba(0, 0, 0, 0.25)',
-        inset: true,
-      },
-      {
-        offsetX: 2,
-        offsetY: 2,
-        blurRadius: 4,
-        spreadDistance: 0,
-        color: '#653ff3',
-        inset: true,
-      },
-      {
-        offsetX: -2,
-        offsetY: -2,
-        blurRadius: 7,
-        spreadDistance: 0,
-        color: 'rgba(39, 9, 150, 0.2)',
-        inset: false,
-      },
-      {
-        offsetX: 4,
-        offsetY: 4,
-        blurRadius: 8,
-        spreadDistance: 0,
-        color: 'rgba(0, 0, 0, 0.25)',
-        inset: false,
-      },
-      {
-        offsetX: 1,
-        offsetY: 1,
-        blurRadius: 2,
-        spreadDistance: 0,
-        color: 'rgba(0, 0, 0, 0.5)',
-        inset: false,
-      },
-    ]
-  },
-
-  danger: {
-    backgroundColor: colors.danger,
-    color: colors.white,
-    // border: 'transparent',
-    hoverBackground: colors.dangerHover,
-    hoverText: colors.white,
-    activeBackground: colors.dangerActive,
-    activeText: colors.white,
-  },
-
-  warning: {
-    backgroundColor: colors.warning,
-    color: colors.white,
-    // border: 'transparent',
-    hoverBackground: colors.warningHover,
-    hoverText: colors.warningHoverText,
-    activeBackground: colors.warningActive,
-    activeText: colors.white,
-  },
-
-  success: {
-    backgroundColor: colors.success,
-    color: colors.white,
-    // border: 'transparent',
-    hoverBackground: colors.successHover,
-    hoverText: colors.successHoverText,
-    activeBackground: colors.successActive,
-    activeText: colors.white,
-  },
-
-  info: {
-    backgroundColor: colors.info,
-    color: colors.white,
-    // border: 'transparent',
-    hoverBackground: colors.infoHover,
-    hoverText: colors.white,
-    activeBackground: colors.infoActive,
-    activeText: colors.white,
-  },
-
-  neutral: {
-    backgroundColor: colors.neutral,
-    color: colors.white,
-    // border: 'transparent',
-    hoverBackground: colors.neutralHover,
-    hoverText: colors.white,
-    activeBackground: colors.neutralActive,
-    activeText: colors.white,
-  },
-
-  'primary-outline': {
-    backgroundColor: colors.primaryOutlineBackground,
-    color: colors.primary,
-    // border: colors.primary,
-    hoverBackground: colors.primaryHover,
-    hoverText: colors.white,
-    activeBackground: colors.primaryActive,
-    activeText: colors.white,
-  },
-
-  'danger-outline': {
-    backgroundColor: colors.dangerOutlineBackground,
-    color: colors.danger,
-    // border: colors.danger,
-    hoverBackground: colors.dangerHover,
-    hoverText: colors.white,
-    activeBackground: colors.dangerActive,
-    activeText: colors.white,
-  },
-
-  'warning-outline': {
-    backgroundColor: colors.warningOutlineBackground,
-    color: colors.warningActive,
-    // border: colors.warningActive,
-    hoverBackground: colors.warningHover,
-    hoverText: colors.warningHoverText,
-    activeBackground: colors.warningActive,
-    activeText: colors.white,
-  },
-
-  'success-outline': {
-    backgroundColor: colors.successOutlineBackground,
-    color: colors.successActive,
-    // border: colors.successActive,
-    hoverBackground: colors.successHover,
-    hoverText: colors.successHoverText,
-    activeBackground: colors.successActive,
-    activeText: colors.white,
-  },
-
-  'info-outline': {
-    backgroundColor: colors.infoOutlineBackground,
-    color: colors.infoOutline,
-    // border: colors.infoOutline,
-    hoverBackground: colors.infoHover,
-    hoverText: colors.white,
-    activeBackground: colors.infoActive,
-    activeText: colors.white,
-  },
-
-  'neutral-outline': {
-    backgroundColor: colors.neutralOutlineBackground,
-    color: colors.neutral,
-    // border: colors.neutral,
-    hoverBackground: colors.neutralHover,
-    hoverText: colors.white,
-    activeBackground: colors.neutralActive,
-    activeText: colors.white,
-  },
-};
 
 export function AppButton({
   title,
@@ -291,11 +103,9 @@ export function AppButton({
     }
 
     return {
-      // backgroundColor: variantStyle.background,
-      // color: variantStyle.text,
       ...variants[variant]
     };
-  };
+  }; 7
 
   return (
     <Pressable

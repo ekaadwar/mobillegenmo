@@ -45,7 +45,7 @@ export function CarCard({ car, onDetail, onEdit, onDelete }: CarCardProps) {
   useEffect(() => setImageFailed(false), [imageUrl]);
 
   return (
-    <View style={[styles.card, { borderRadius: r(12), marginBottom: r(16) }]}>
+    <View style={[styles.card, { borderRadius: r(16), marginBottom: r(16) }]}>
       <View style={[styles.imageFrame, { height: r(198) }]}>
         {imageUrl && !imageFailed ? (
           <Image
@@ -141,12 +141,38 @@ export function CarCard({ car, onDetail, onEdit, onDelete }: CarCardProps) {
 const styles = StyleSheet.create({
   card: {
     overflow: 'hidden',
-    backgroundColor: colors.surface,
-    elevation: 3,
-    shadowColor: colors.textPrimary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 5,
+    backgroundColor: colors.background,
+    // elevation: 3,
+    // shadowColor: colors.textPrimary,
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.12,
+    // shadowRadius: 5,
+    boxShadow: [
+      // Drop Shadow 1
+      {
+        offsetX: -6,
+        offsetY: -6,
+        blurRadius: 25,
+        spreadDistance: 0,
+        color: '#FFFFFF',
+      },
+      // Drop Shadow 2
+      {
+        offsetX: -4,
+        offsetY: -4,
+        blurRadius: 6,
+        spreadDistance: 0,
+        color: '#FFFFFF',
+      },
+      // Drop Shadow 3
+      {
+        offsetX: 4,
+        offsetY: 4,
+        blurRadius: 4,
+        spreadDistance: 0,
+        color: 'rgba(0, 0, 0, 0.2)',
+      },
+    ]
   },
   imageFrame: {
     backgroundColor: colors.imagePlaceholder,
