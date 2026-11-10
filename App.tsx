@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 
 import {
   GestureHandlerRootView,
@@ -19,9 +20,7 @@ import {
 function App() {
   return (
     <GestureHandlerRootView
-      style={{
-        flex: 1,
-      }}>
+      style={styles.root}>
       <SafeAreaProvider>
         <AuthProvider>
           <RootNavigator />
@@ -30,5 +29,11 @@ function App() {
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});
 
 export default App;

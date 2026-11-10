@@ -47,6 +47,23 @@ interface LoginErrors {
   form?: string;
 }
 
+interface LoginIconProps {
+  color: string;
+  size: number;
+}
+
+function UsernameIcon({ color, size }: LoginIconProps) {
+  return <AppIcon icon={faUser} size={size} color={color} />;
+}
+
+function PasswordIcon({ color, size }: LoginIconProps) {
+  return <AppIcon icon={faLock} size={size} color={color} />;
+}
+
+function LoginArrowIcon({ color, size }: LoginIconProps) {
+  return <AppIcon icon={faArrowRight} size={size} color={color} />;
+}
+
 export function LoginScreen() {
   const { login } = useAuth();
 
@@ -214,9 +231,7 @@ export function LoginScreen() {
             onSubmitEditing={() => {
               passwordRef.current?.focus();
             }}
-            leftIcon={({ color, size }) => (
-              <AppIcon icon={faUser} size={size} color={color} />
-            )}
+            leftIcon={UsernameIcon}
           />
 
           <View
@@ -248,9 +263,7 @@ export function LoginScreen() {
               }
             }}
             onSubmitEditing={handleLogin}
-            leftIcon={({ color, size }) => (
-              <AppIcon icon={faLock} size={size} color={color} />
-            )}
+            leftIcon={PasswordIcon}
           />
 
           {errors.form ? (
@@ -278,9 +291,7 @@ export function LoginScreen() {
             width="full"
             loading={isSubmitting}
             onPress={handleLogin}
-            rightIcon={({ color, size }) => (
-              <AppIcon icon={faArrowRight} size={size} color={color} />
-            )}
+            rightIcon={LoginArrowIcon}
           />
         </View>
       </ScrollView>
