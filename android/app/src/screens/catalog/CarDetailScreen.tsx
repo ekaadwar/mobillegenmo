@@ -1,41 +1,41 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {faArrowLeft} from '@fortawesome/free-solid-svg-icons/faArrowLeft';
-import {faCar} from '@fortawesome/free-solid-svg-icons/faCar';
-import {faPen} from '@fortawesome/free-solid-svg-icons/faPen';
-import {faQrcode} from '@fortawesome/free-solid-svg-icons/faQrcode';
-import {faShieldHalved} from '@fortawesome/free-solid-svg-icons/faShieldHalved';
-import {faTrash} from '@fortawesome/free-solid-svg-icons/faTrash';
-import {AppBadge} from '../../components/ui/AppBadge';
-import {AppButton} from '../../components/ui/AppButton';
-import {AppCard} from '../../components/ui/AppCard';
-import {AppIcon} from '../../components/ui/AppIcon';
-import {CarImageGallery} from '../../components/cars/CarImageGallery';
-import {CarSpecificationCard} from '../../components/cars/CarSpecificationCard';
-import {useResponsive} from '../../hooks/useResponsive';
-import {CatalogStackParamList} from '../../navigation/types';
-import {getCar, updateCarImageHighlight} from '../../services/carService';
-import {CarDetail, CarImage} from '../../types/car';
-import {formatMileage, formatRupiah, formatValidityPeriod} from '../../utils/carFormatting';
-import {colors} from '../../theme/colors';
-import {typography} from '../../theme/typography';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons/faArrowLeft';
+import { faCar } from '@fortawesome/free-solid-svg-icons/faCar';
+import { faPen } from '@fortawesome/free-solid-svg-icons/faPen';
+import { faQrcode } from '@fortawesome/free-solid-svg-icons/faQrcode';
+import { faShieldHalved } from '@fortawesome/free-solid-svg-icons/faShieldHalved';
+import { faTrash } from '@fortawesome/free-solid-svg-icons/faTrash';
+import { AppBadge } from '../../components/ui/AppBadge';
+import { AppButton } from '../../components/ui/AppButton';
+import { AppCard } from '../../components/ui/AppCard';
+import { AppIcon } from '../../components/ui/AppIcon';
+import { CarImageGallery } from '../../components/cars/CarImageGallery';
+import { CarSpecificationCard } from '../../components/cars/CarSpecificationCard';
+import { useResponsive } from '../../hooks/useResponsive';
+import { CatalogStackParamList } from '../../navigation/types';
+import { getCar, updateCarImageHighlight } from '../../services/carService';
+import { CarDetail, CarImage } from '../../types/car';
+import { formatMileage, formatRupiah, formatValidityPeriod } from '../../utils/carFormatting';
+import { colors } from '../../theme/colors';
+import { typography } from '../../theme/typography';
 
-function EditIcon({color, size}: {color: string; size: number}) {
+function EditIcon({ color, size }: { color: string; size: number }) {
   return <AppIcon icon={faPen} color={color} size={size} />;
 }
 
-function QrIcon({color, size}: {color: string; size: number}) {
+function QrIcon({ color, size }: { color: string; size: number }) {
   return <AppIcon icon={faQrcode} color={color} size={size} />;
 }
 
-function DeleteIcon({color, size}: {color: string; size: number}) {
+function DeleteIcon({ color, size }: { color: string; size: number }) {
   return <AppIcon icon={faTrash} color={color} size={size} />;
 }
 
-export function CarDetailScreen({route, navigation}: NativeStackScreenProps<CatalogStackParamList, 'CarDetail'>) {
-  const {carId, refreshKey} = route.params;
-  const {width, contentWidth, fontScale} = useResponsive();
+export function CarDetailScreen({ route, navigation }: NativeStackScreenProps<CatalogStackParamList, 'CarDetail'>) {
+  const { carId, refreshKey } = route.params;
+  const { width, contentWidth, fontScale } = useResponsive();
   const [car, setCar] = useState<CarDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -86,7 +86,7 @@ export function CarDetailScreen({route, navigation}: NativeStackScreenProps<Cata
       if (controller.signal.aborted) {
         return;
       }
-      setCar(previous => previous ? {...previous, images: previous.images.map(item => item.id === updated.id ? updated : item)} : previous);
+      setCar(previous => previous ? { ...previous, images: previous.images.map(item => item.id === updated.id ? updated : item) } : previous);
       const refreshed = await getCar(carId, controller.signal);
       if (!controller.signal.aborted) {
         setCar(refreshed);
@@ -104,11 +104,11 @@ export function CarDetailScreen({route, navigation}: NativeStackScreenProps<Cata
   };
 
   const openLogout = () => navigation.navigate('Logout');
-  const openEdit = () => navigation.navigate('CarForm', {carId, car: car ?? undefined, source: 'detail'});
+  const openEdit = () => navigation.navigate('CarForm', { carId, car: car ?? undefined, source: 'detail' });
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent}>
-      <View style={[styles.content, {width: Math.min(contentWidth, width - 32)}]}>
+      <View style={[styles.content, { width: Math.min(contentWidth, width - 32) }]}>
         <Pressable accessibilityRole="button" accessibilityLabel="Kembali ke Daftar Mobil" onPress={() => navigation.goBack()} style={styles.back}>
           <AppIcon icon={faArrowLeft} size={16} color={colors.textPrimary} />
           <Text style={styles.backText}>Kembali ke Daftar Mobil</Text>
@@ -157,24 +157,49 @@ export function CarDetailScreen({route, navigation}: NativeStackScreenProps<Cata
 }
 
 const styles = StyleSheet.create({
-  screen: {flex: 1, backgroundColor: colors.background},
-  scrollContent: {paddingBottom: 20},
-  content: {alignSelf: 'center', gap: 20},
-  back: {flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingTop: 12},
-  backText: {fontFamily: typography.semiBold, fontSize: 14, color: colors.textPrimary, flexShrink: 1},
-  loading: {marginVertical: 48},
-  error: {gap: 12},
-  errorText: {fontFamily: typography.regular, fontSize: 14, color: colors.danger},
-  name: {fontFamily: typography.bold, fontSize: 24, lineHeight: 34, color: colors.textPrimary, marginVertical: 10},
-  priceBlock: {backgroundColor: colors.background, padding: 8, borderRadius: 8, gap: 4},
-  priceLabel: {fontFamily: typography.regular, fontSize: 14, color: colors.neutralHover},
-  price: {fontFamily: typography.bold, fontSize: 26, color: colors.primary, flexShrink: 1},
-  heading: {fontFamily: typography.semiBold, fontSize: 16, color: colors.textPrimary, flexShrink: 1},
-  specifications: {gap: 4},
-  specRow: {flexDirection: 'row', gap: 4},
-  actions: {gap: 8},
-  actionHeading: {flexDirection: 'row', gap: 8, alignItems: 'center', marginBottom: 4},
-  actionRow: {flexDirection: 'row', gap: 8},
-  action: {flex: 1},
-  stacked: {flexDirection: 'column'},
+  screen: { flex: 1, backgroundColor: colors.background },
+  scrollContent: { paddingBottom: 20 },
+  content: { alignSelf: 'center', gap: 20 },
+  back: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingTop: 12 },
+  backText: { fontFamily: typography.semiBold, fontSize: 14, color: colors.textPrimary, flexShrink: 1 },
+  loading: { marginVertical: 48 },
+  error: { gap: 12 },
+  errorText: { fontFamily: typography.regular, fontSize: 14, color: colors.danger },
+  name: { fontFamily: typography.bold, fontSize: 24, lineHeight: 34, color: colors.textPrimary, marginVertical: 10 },
+  priceBlock: {
+    backgroundColor: colors.background,
+    padding: 8,
+    borderRadius: 8,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    boxShadow: [
+      {
+        offsetX: 2,
+        offsetY: 2,
+        blurRadius: 5,
+        spreadDistance: 0,
+        color: '#bbc4e4',
+        inset: true,
+      },
+      {
+        offsetX: -4,
+        offsetY: -4,
+        blurRadius: 8,
+        spreadDistance: 0,
+        color: '#FFFFFF',
+        inset: true,
+      },
+    ],
+  },
+  priceLabel: { fontFamily: typography.regular, fontSize: 14, color: colors.neutralHover },
+  price: { fontFamily: typography.bold, fontSize: 26, color: colors.primary, flexShrink: 1 },
+  heading: { fontFamily: typography.semiBold, fontSize: 16, color: colors.textPrimary, flexShrink: 1 },
+  specifications: { gap: 4 },
+  specRow: { flexDirection: 'row', gap: 4 },
+  actions: { gap: 8 },
+  actionHeading: { flexDirection: 'row', gap: 8, alignItems: 'center', marginBottom: 4 },
+  actionRow: { flexDirection: 'row', gap: 8 },
+  action: { flex: 1 },
+  stacked: { flexDirection: 'column' },
 });
