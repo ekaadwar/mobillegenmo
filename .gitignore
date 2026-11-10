@@ -80,5 +80,9 @@ yarn-error.log
 resources
 
 # Android production signing
+*.jks
+*.p12
+*.aab
+*.apks
 /android/app/mobillegend-upload-key.keystore
 /android/ekamoto-crash.log

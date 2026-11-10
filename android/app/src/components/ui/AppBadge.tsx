@@ -6,7 +6,6 @@ import {
 } from 'react-native';
 
 import { ButtonVariant } from './AppButton';
-import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { useResponsive } from '../../hooks/useResponsive';
 import { variants } from '../../theme/boxShadowEmerge';
@@ -16,30 +15,6 @@ interface AppBadgeProps {
   variant?: ButtonVariant;
   icon?: ReactNode;
 }
-
-interface BaseShadow {
-  offsetX: number;
-  offsetY: number;
-  blurRadius: number;
-  spreadDistance: number;
-  color: string;
-  inset: boolean;
-}
-
-const badgeColors: Record<ButtonVariant, { background: string; text: string; border: string }> = {
-  primary: { background: colors.primary, text: colors.white, border: colors.primary },
-  danger: { background: colors.danger, text: colors.white, border: colors.danger },
-  warning: { background: colors.warning, text: colors.white, border: colors.warning },
-  success: { background: colors.success, text: colors.white, border: colors.success },
-  info: { background: colors.info, text: colors.white, border: colors.info },
-  neutral: { background: colors.neutral, text: colors.white, border: colors.neutral },
-  'primary-outline': { background: colors.surface, text: colors.primary, border: colors.primary },
-  'danger-outline': { background: colors.dangerOutlineBackground, text: colors.danger, border: colors.danger },
-  'warning-outline': { background: colors.warningOutlineBackground, text: colors.warningActive, border: colors.warningActive },
-  'success-outline': { background: colors.successOutlineBackground, text: colors.successActive, border: colors.successActive },
-  'info-outline': { background: colors.infoOutlineBackground, text: colors.infoOutline, border: colors.infoOutline },
-  'neutral-outline': { background: colors.neutralOutlineBackground, text: colors.neutral, border: colors.neutral },
-};
 
 export function AppBadge({
   label,

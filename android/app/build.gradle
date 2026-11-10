@@ -72,6 +72,36 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+def uploadSigningProperties = [
+    'EKAMOTO_UPLOAD_STORE_FILE',
+    'EKAMOTO_UPLOAD_STORE_PASSWORD',
+    'EKAMOTO_UPLOAD_KEY_ALIAS',
+    'EKAMOTO_UPLOAD_KEY_PASSWORD'
+]
+def hasUploadSigning = uploadSigningProperties.every { providers.gradleProperty(it).orNull?.trim() }
+
+def validatePlayRelease = tasks.register('validatePlayRelease') {
+    doLast {
+        def missingProperties = uploadSigningProperties.findAll { !providers.gradleProperty(it).orNull?.trim() }
+        if (!missingProperties.isEmpty()) {
+            throw new GradleException("Missing release signing properties: ${missingProperties.join(', ')}. Configure ~/.gradle/gradle.properties; see docs/google-play-release.md.")
+        }
+        if (!file(providers.gradleProperty('EKAMOTO_UPLOAD_STORE_FILE').get()).isFile()) {
+            throw new GradleException('Upload keystore not found. Check EKAMOTO_UPLOAD_STORE_FILE.')
+        }
+        if (file(providers.gradleProperty('EKAMOTO_UPLOAD_STORE_FILE').get()).canonicalFile == file('debug.keystore').canonicalFile ||
+            providers.gradleProperty('EKAMOTO_UPLOAD_KEY_ALIAS').get() == 'androiddebugkey') {
+            throw new GradleException('Google Play releases must use a private upload key, not the debug key.')
+        }
+    }
+}
+
+tasks.configureEach { task ->
+    if (task.name == 'preReleaseBuild') {
+        task.dependsOn(validatePlayRelease)
+    }
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -82,8 +112,8 @@ android {
         applicationId "com.ekadeve.ekamoto"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode providers.gradleProperty('EKAMOTO_VERSION_CODE').getOrElse('1').toInteger()
+        versionName providers.gradleProperty('EKAMOTO_VERSION_NAME').getOrElse('1.0')
     }
     signingConfigs {
         debug {
@@ -93,7 +123,7 @@ android {
             keyPassword 'android'
         }
         release {
-            if (project.hasProperty('EKAMOTO_UPLOAD_STORE_FILE')) {
+            if (hasUploadSigning) {
                 storeFile file(EKAMOTO_UPLOAD_STORE_FILE)
                 storePassword EKAMOTO_UPLOAD_STORE_PASSWORD
                 keyAlias EKAMOTO_UPLOAD_KEY_ALIAS
@@ -106,9 +136,8 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
             signingConfig signingConfigs.release
+            manifestPlaceholders = [usesCleartextTraffic: "false"]
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }

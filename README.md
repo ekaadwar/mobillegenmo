@@ -1,5 +1,9 @@
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
+## Google Play Release
+
+Panduan signing, build Android App Bundle (AAB), pemeriksaan perangkat, serta checklist Play Console tersedia di [docs/google-play-release.md](docs/google-play-release.md). Mulai dengan `npm run android:release:check`; setelah upload key dan endpoint produksi siap, jalankan `npm run android:bundle`.
+
 ## Catalog And Car Detail
 
 - `Katalog > Lihat Detail` opens the selected car using `GET /api/v1/cars/{id}`. The detail stack preserves the shared header and bottom tabs.

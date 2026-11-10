@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
+    "android:release:check": "cd android && ./gradlew :app:validatePlayRelease --console=plain",
+    "android:bundle": "cd android && ./gradlew :app:bundleRelease --console=plain",
+    "android:apk:release": "cd android && ./gradlew :app:assembleRelease --console=plain",
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
