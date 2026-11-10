@@ -1,8 +1,8 @@
-import React, {PropsWithChildren} from 'react';
-import {StyleProp, StyleSheet, View, ViewStyle} from 'react-native';
-import {colors} from '../../theme/colors';
+import React, { PropsWithChildren } from 'react';
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { colors } from '../../theme/colors';
 
-export function AppCard({children, style}: PropsWithChildren<{style?: StyleProp<ViewStyle>}>) {
+export function AppCard({ children, style }: PropsWithChildren<{ style?: StyleProp<ViewStyle> }>) {
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
@@ -10,11 +10,28 @@ const styles = StyleSheet.create({
   card: {
     padding: 16,
     borderRadius: 8,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     elevation: 1,
     shadowColor: colors.textPrimary,
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 2,
+    boxShadow: [
+      {
+        offsetX: 2,
+        offsetY: 2,
+        blurRadius: 4,
+        spreadDistance: 0,
+        inset: true,
+        color: '#FFFFFF',
+      },
+      {
+        offsetX: 4,
+        offsetY: 4,
+        blurRadius: 4,
+        spreadDistance: 0,
+        color: 'rgba(0, 0, 0, 0.2)',
+      },
+    ]
   },
 });

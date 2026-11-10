@@ -1,10 +1,10 @@
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
-import {SvgXml} from 'react-native-svg';
+import { StyleSheet, Text, View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 import icons from '../../../../../assets/catalogIcons.json';
-import {AppCard} from '../ui/AppCard';
-import {colors} from '../../theme/colors';
-import {typography} from '../../theme/typography';
+import { AppCard } from '../ui/AppCard';
+import { colors } from '../../theme/colors';
+import { typography } from '../../theme/typography';
 
 interface CarSpecificationCardProps {
   icon: keyof typeof icons;
@@ -14,7 +14,7 @@ interface CarSpecificationCardProps {
   description?: boolean;
 }
 
-export function CarSpecificationCard({icon, label, value, caption, description}: CarSpecificationCardProps) {
+export function CarSpecificationCard({ icon, label, value, caption, description }: CarSpecificationCardProps) {
   return (
     <AppCard style={styles.card}>
       <View style={styles.icon}>
@@ -30,11 +30,38 @@ export function CarSpecificationCard({icon, label, value, caption, description}:
 }
 
 const styles = StyleSheet.create({
-  card: {flex: 1, padding: 8, flexDirection: 'row', gap: 10},
-  icon: {width: 32, height: 32, borderRadius: 8, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center'},
-  content: {flex: 1, minWidth: 0, gap: 4, paddingVertical: 4},
-  label: {fontFamily: typography.regular, fontSize: 10, color: colors.textSecondary},
-  value: {fontFamily: typography.semiBold, fontSize: 14, color: colors.textPrimary},
-  caption: {fontFamily: typography.regular, fontSize: 10, lineHeight: 18, color: colors.textSecondary},
-  description: {fontFamily: typography.regular, fontSize: 10, lineHeight: 22, color: colors.textSecondary},
+  card: { flex: 1, padding: 8, flexDirection: 'row', gap: 10 },
+  icon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
+    boxShadow: [
+      {
+        offsetX: 2,
+        offsetY: 2,
+        blurRadius: 5,
+        spreadDistance: 0,
+        color: '#bbc4e4',
+        inset: true,
+      },
+      {
+        offsetX: -4,
+        offsetY: -4,
+        blurRadius: 8,
+        spreadDistance: 0,
+        color: '#FFFFFF',
+        inset: true,
+      },
+    ],
+  },
+  content: { flex: 1, minWidth: 0, gap: 4, paddingVertical: 4 },
+  label: { fontFamily: typography.regular, fontSize: 10, color: colors.textSecondary },
+  value: { fontFamily: typography.semiBold, fontSize: 14, color: colors.textPrimary },
+  caption: { fontFamily: typography.regular, fontSize: 10, lineHeight: 18, color: colors.textSecondary },
+  description: { fontFamily: typography.regular, fontSize: 10, lineHeight: 22, color: colors.textSecondary },
 });
